@@ -1,0 +1,9 @@
+[package]
+name = "sessions"
+version = "0.0.0"
+authors = ["Fangdun Cai <cfddream@gmail.com>"]
+edition = "2018"
+description = "Sessions"
+license = "MIT/Apache-2.0"
+
+[dependencies]
