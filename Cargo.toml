@@ -7,3 +7,11 @@ description = "Sessions"
 license = "MIT/Apache-2.0"
 
 [dependencies]
+http = "0.2"
+serde = "1.0"
+serde_json = "1.0"
+
+[features]
+cookie = []
+redis = []
+memory = []
