@@ -1,5 +1,5 @@
 use serde;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sessions::{Session, Sessionable, Storable};
 use std::collections::HashMap;
 use std::io::Error;
@@ -47,4 +47,31 @@ fn session() {
 
     assert_eq!(session.set("counter", 144).unwrap(), ());
     assert_eq!(session.get("counter").unwrap(), Some(144));
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    struct User {
+        age: u32,
+        name: String,
+    }
+
+    assert_eq!(
+        session
+            .set(
+                "user",
+                User {
+                    age: 23,
+                    name: "Jordan".to_owned(),
+                }
+            )
+            .unwrap(),
+        ()
+    );
+    let user: User = session.get("user").unwrap().unwrap();
+    assert_eq!(
+        user,
+        User {
+            age: 23,
+            name: "Jordan".to_owned(),
+        }
+    );
 }
