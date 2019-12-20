@@ -6,6 +6,7 @@ use std::io::Error;
 
 #[test]
 fn session() {
+    #[derive(Debug)]
     struct MyStore {
         values: HashMap<String, String>,
     }
@@ -19,21 +20,21 @@ fn session() {
     }
 
     impl Storable for MyStore {
-        fn create(self, name: impl AsRef<str>) -> Session<Self> {
+        fn create(self, name: &str) -> Session<Self> {
             Session::new(name, self)
         }
 
-        fn get<T: DeserializeOwned>(&self, key: impl AsRef<str>) -> Result<Option<T>, Error> {
-            if let Some(value) = self.values.get(key.as_ref()) {
+        fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
+            if let Some(value) = self.values.get(key) {
                 Ok(Some(serde_json::from_str(value)?))
             } else {
                 Ok(None)
             }
         }
 
-        fn set<T: Serialize>(&mut self, key: impl AsRef<str>, value: T) -> Result<(), Error> {
+        fn set<T: Serialize>(&mut self, key: &str, value: T) -> Result<(), Error> {
             self.values
-                .insert(key.as_ref().to_owned(), serde_json::to_string(&value)?);
+                .insert(key.to_owned(), serde_json::to_string(&value)?);
 
             Ok(())
         }
@@ -66,12 +67,12 @@ fn session() {
             .unwrap(),
         ()
     );
-    let user: User = session.get("user").unwrap().unwrap();
+    let user: Option<User> = session.get::<User>("user").unwrap();
     assert_eq!(
         user,
-        User {
+        Some(User {
             age: 23,
             name: "Jordan".to_owned(),
-        }
+        })
     );
 }
