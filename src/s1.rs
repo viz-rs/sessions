@@ -1,14 +1,13 @@
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{from_value, to_value, Map, Value};
 use std::io::{Error, ErrorKind};
+use std::sync::Arc;
 
 use crate::Storable;
 
-pub trait Sessionable {
-    // fn save(&mut self);
-
+pub trait Sessionable<Store> {
+    fn save(&mut self);
     fn state(&self) -> &Map<String, Value>;
-    fn state_mut(&mut self) -> &mut Map<String, Value>;
 
     fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T>;
     fn set<T: DeserializeOwned + Serialize>(&mut self, key: &str, val: T) -> Option<T>;
@@ -17,27 +16,45 @@ pub trait Sessionable {
 }
 
 #[derive(Debug, Default)]
-pub struct Session {
+pub struct Session<Store> {
+    name: String,
+    store: Arc<Store>,
     state: Map<String, Value>,
+    is_new: bool,
 }
 
-impl Session {
-    pub fn new() -> Self {
-        Self { state: Map::new() }
+impl<Store> Session<Store>
+where
+    Store: Storable,
+{
+    pub fn new(name: &str, store: Arc<Store>) -> Self {
+        Self {
+            name: name.to_owned(),
+            state: Map::new(),
+            is_new: true,
+            store,
+        }
+    }
+
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    pub fn store(&self) -> &Arc<Store> {
+        &self.store
     }
 }
 
-impl Sessionable for Session {
-    // fn save(&mut self) {
-    // self.store.save(self);
-    // }
+impl<Store> Sessionable<Store> for Session<Store>
+where
+    Store: Storable,
+{
+    fn save(&mut self) {
+        // self.store.save(self);
+    }
 
     fn state(&self) -> &Map<String, Value> {
         &self.state
-    }
-
-    fn state_mut(&mut self) -> &mut Map<String, Value> {
-        &mut self.state
     }
 
     fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
