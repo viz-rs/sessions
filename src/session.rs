@@ -16,14 +16,14 @@ pub trait Sessionable {
     fn clear(&mut self);
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Session {
     state: Map<String, Value>,
 }
 
 impl Session {
     pub fn new() -> Self {
-        Self { state: Map::new() }
+        Default::default()
     }
 }
 

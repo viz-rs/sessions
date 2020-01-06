@@ -120,8 +120,10 @@ fn session() {
             );
 
             assert_eq!(session.remove("number"), Some(json!(233)));
+            assert_eq!(session.remove::<f32>("counter").unwrap(), 144.0);
 
             state.remove("number");
+            state.remove("counter");
             assert_eq!(session.state(), &state);
 
             session.clear();
@@ -130,6 +132,15 @@ fn session() {
             state.clear();
             assert_eq!(session.state(), &state);
             assert_eq!(serde_json::to_string(session.state()).unwrap(), "{}");
+
+            *session.state_mut() = serde_json::from_str(
+                r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#,
+            )
+            .unwrap();
+            assert_eq!(
+                serde_json::to_string(session.state()).unwrap(),
+                r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
+            );
 
             println!("{} ==>", i);
             dbg!(session);
