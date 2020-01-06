@@ -1,6 +1,6 @@
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Map};
-use sessions::{Session, Sessionable, Storable};
+use sessions::session::*;
 use std::collections::HashMap;
 use std::io::Error;
 use std::sync::Arc;
@@ -8,37 +8,37 @@ use std::thread;
 
 #[test]
 fn session() {
-    #[derive(Clone, Debug, PartialEq)]
-    struct MyStore {
-        values: HashMap<String, String>,
-    }
+    // #[derive(Clone, Debug, PartialEq)]
+    // struct MyStore {
+    //     values: HashMap<String, String>,
+    // }
 
-    impl MyStore {
-        fn new() -> Self {
-            Self {
-                values: HashMap::new(),
-            }
-        }
-    }
+    // impl MyStore {
+    //     fn new() -> Self {
+    //         Self {
+    //             values: HashMap::new(),
+    //         }
+    //     }
+    // }
 
-    impl Storable for MyStore {
-        fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
-            if let Some(value) = self.values.get(key) {
-                Ok(Some(serde_json::from_str(value)?))
-            } else {
-                Ok(None)
-            }
-        }
+    // impl Storable for MyStore {
+    //     fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
+    //         if let Some(value) = self.values.get(key) {
+    //             Ok(Some(serde_json::from_str(value)?))
+    //         } else {
+    //             Ok(None)
+    //         }
+    //     }
 
-        fn set<T: Serialize>(&mut self, key: &str, value: T) -> Result<(), Error> {
-            self.values
-                .insert(key.to_owned(), serde_json::to_string(&value)?);
+    //     fn set<T: Serialize>(&mut self, key: &str, value: T) -> Result<(), Error> {
+    //         self.values
+    //             .insert(key.to_owned(), serde_json::to_string(&value)?);
 
-            Ok(())
-        }
+    //         Ok(())
+    //     }
 
-        // fn save<S: Sessionable<Self>>(&mut self, session: S) {}
-    }
+    //     // fn save<S: Sessionable<Self>>(&mut self, session: S) {}
+    // }
 
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
@@ -46,9 +46,9 @@ fn session() {
         name: String,
     }
 
-    let store = MyStore::new();
+    // let store = MyStore::new();
 
-    let store = Arc::new(store);
+    // let store = Arc::new(store);
 
     for i in 0..10 {
         // let name = format!("trek-{}", i);
@@ -57,22 +57,24 @@ fn session() {
         thread::spawn(move || {
             println!(" ========> {} <=========", i);
             // let mut session = Session::new(&name, store);
-            let mut session = Session::new();
+            let session = Session::new();
 
             // assert_eq!(session.name(), &name);
 
-            assert_eq!(session.set("counter", 144), None);
-            assert_eq!(session.set("number", 233), None);
-            assert_eq!(session.get::<usize>("counter").unwrap(), 144);
-            assert_eq!(session.get::<u32>("number").unwrap(), 233);
+            assert_eq!(session.set("counter", 144).unwrap(), None);
+            assert_eq!(session.set("number", 233).unwrap(), None);
+            assert_eq!(session.get::<usize>("counter").unwrap(), Some(144));
+            assert_eq!(session.get::<u32>("number").unwrap(), Some(233));
             assert_eq!(
-                session.set(
-                    "user",
-                    User {
-                        age: 23,
-                        name: "Jordan".to_owned(),
-                    }
-                ),
+                session
+                    .set(
+                        "user",
+                        User {
+                            age: 23,
+                            name: "Jordan".to_owned(),
+                        }
+                    )
+                    .unwrap(),
                 None
             );
             assert_eq!(
@@ -85,12 +87,12 @@ fn session() {
                         }
                     )
                     .unwrap(),
-                User {
+                Some(User {
                     age: 23,
                     name: "Jordan".to_owned(),
-                }
+                })
             );
-            let user: Option<User> = session.get::<User>("user");
+            let user: Option<User> = session.get::<User>("user").unwrap();
             assert_eq!(
                 user,
                 Some(User {
@@ -109,37 +111,48 @@ fn session() {
                     name: "Kobe".to_owned(),
                 }),
             );
-            assert_eq!(session.state(), &state);
+            assert_eq!(session.state().unwrap().clone(), state);
             assert_eq!(
                 serde_json::to_string(&state).unwrap(),
                 r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
             );
             assert_eq!(
-                serde_json::to_string(session.state()).unwrap(),
+                serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
                 r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
             );
 
-            assert_eq!(session.remove("number"), Some(json!(233)));
-            assert_eq!(session.remove::<f32>("counter").unwrap(), 144.0);
+            assert_eq!(session.remove("number").unwrap(), Some(json!(233)));
+            assert_eq!(session.remove::<f32>("counter").unwrap(), Some(144.0));
 
             state.remove("number");
             state.remove("counter");
-            assert_eq!(session.state(), &state);
+            assert_eq!(session.state().unwrap().clone(), state);
 
             session.clear();
-            assert_eq!(session.state(), &Map::new());
+            assert_eq!(session.state().unwrap().clone(), Map::new());
 
             state.clear();
-            assert_eq!(session.state(), &state);
-            assert_eq!(serde_json::to_string(session.state()).unwrap(), "{}");
+            assert_eq!(session.state().unwrap().clone(), state);
+            assert_eq!(
+                serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
+                "{}"
+            );
 
-            *session.state_mut() = serde_json::from_str(
+            *session.state_mut().unwrap() = serde_json::from_str(
                 r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#,
             )
             .unwrap();
             assert_eq!(
-                serde_json::to_string(session.state()).unwrap(),
+                serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
                 r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
+            );
+
+            assert_eq!(
+                session.state().unwrap().clone(),
+                Session::from(session.state().unwrap().clone())
+                    .state()
+                    .unwrap()
+                    .clone()
             );
 
             println!("{} ==>", i);
@@ -150,5 +163,5 @@ fn session() {
         .unwrap();
     }
 
-    dbg!(store);
+    // dbg!(store);
 }
