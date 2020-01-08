@@ -123,6 +123,8 @@ fn session() {
 
             assert_eq!(session.remove("number").unwrap(), Some(json!(233)));
             assert_eq!(session.remove::<f32>("counter").unwrap(), Some(144.0));
+            assert_eq!(session.get::<u32>("counter").unwrap(), None);
+            assert_eq!(session.remove::<usize>("counter").unwrap(), None);
 
             state.remove("number");
             state.remove("counter");
