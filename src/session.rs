@@ -16,20 +16,31 @@ pub trait Sessionable {
     fn clear(&self) -> Result<(), Error>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Session {
     /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     state: Arc<RwLock<Map<String, Value>>>,
 }
 
+impl Default for Session {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            state: Arc::default(),
+        }
+    }
+}
+
 impl Session {
+    #[inline]
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
 }
 
 impl From<Map<String, Value>> for Session {
+    #[inline]
     fn from(m: Map<String, Value>) -> Self {
         Session {
             state: Arc::new(RwLock::new(m)),
@@ -38,6 +49,7 @@ impl From<Map<String, Value>> for Session {
 }
 
 impl From<Arc<RwLock<Map<String, Value>>>> for Session {
+    #[inline]
     fn from(m: Arc<RwLock<Map<String, Value>>>) -> Self {
         Session {
             state: Arc::clone(&m),

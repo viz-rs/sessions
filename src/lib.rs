@@ -12,6 +12,8 @@
 mod cookie;
 #[cfg(feature = "memory")]
 mod memory;
+#[cfg(feature = "mongodb")]
+mod mongodb;
 #[cfg(feature = "redis")]
 mod redis;
 
