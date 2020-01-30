@@ -18,7 +18,7 @@ pub trait Sessionable {
 
 #[derive(Debug, Default)]
 pub struct Session {
-    /// Why not uses `Rc<RefCell<Map<String, Value>>>`?
+    /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     state: Arc<RwLock<Map<String, Value>>>,
 }
