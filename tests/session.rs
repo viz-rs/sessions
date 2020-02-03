@@ -1,44 +1,48 @@
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::{json, Map};
-use sessions::session::*;
-use std::collections::HashMap;
-use std::io::Error;
-use std::sync::Arc;
-use std::thread;
+use futures::future::BoxFuture;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, to_string, Map};
+use sessions::{Session, State, Storable};
+use std::{
+    collections::HashMap,
+    error::Error as ErrorExt,
+    fmt,
+    io::{Error, ErrorKind},
+    sync::{Arc, RwLock},
+};
+use tokio::runtime::Runtime;
 
 #[test]
 fn session() {
-    // #[derive(Clone, Debug, PartialEq)]
-    // struct MyStore {
-    //     values: HashMap<String, String>,
-    // }
+    #[derive(Clone, Debug)]
+    struct MyStore {
+        values: Arc<RwLock<HashMap<String, String>>>,
+    }
 
-    // impl MyStore {
-    //     fn new() -> Self {
-    //         Self {
-    //             values: HashMap::new(),
-    //         }
-    //     }
-    // }
+    impl MyStore {
+        fn new() -> Self {
+            Self {
+                values: Arc::new(RwLock::new(HashMap::new())),
+            }
+        }
 
-    // impl Storable for MyStore {
-    //     fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
-    //         if let Some(value) = self.values.get(key) {
-    //             Ok(Some(serde_json::from_str(value)?))
-    //         } else {
-    //             Ok(None)
-    //         }
-    //     }
+        async fn save_data(&self, name: String, state: State) -> Result<(), Error> {
+            self.values
+                .write()
+                .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
+                .insert(name, serde_json::to_string(&state)?);
+            Ok(())
+        }
+    }
 
-    //     fn set<T: Serialize>(&mut self, key: &str, value: T) -> Result<(), Error> {
-    //         self.values
-    //             .insert(key.to_owned(), serde_json::to_string(&value)?);
+    impl Storable for MyStore {
+        fn save(&self, name: String, state: State) -> BoxFuture<'_, Result<(), Error>> {
+            Box::pin(async move { self.save_data(name, state).await })
+        }
 
-    //         Ok(())
-    //     }
-
-    //     // fn save<S: Sessionable<Self>>(&mut self, session: S) {}
-    // }
+        fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fmt::Debug::fmt(&self.values, f)
+        }
+    }
 
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
@@ -46,20 +50,21 @@ fn session() {
         name: String,
     }
 
-    // let store = MyStore::new();
+    let store = MyStore::new();
 
-    // let store = Arc::new(store);
+    let store = Arc::new(store);
+
+    let rt = Runtime::new().unwrap();
 
     for i in 0..10 {
-        // let name = format!("trek-{}", i);
-        // let store = store.clone();
+        let name = format!("trek-{}", i);
+        let store = store.clone();
 
-        thread::spawn(move || {
+        rt.spawn(async move {
             println!(" ========> {} <=========", i);
-            // let mut session = Session::new(&name, store);
-            let session = Session::new();
+            let session = Session::new(&name, store);
 
-            // assert_eq!(session.name(), &name);
+            assert_eq!(session.name(), name);
 
             assert_eq!(session.set("counter", 144).unwrap(), None);
             assert_eq!(session.set("number", 233).unwrap(), None);
@@ -130,7 +135,7 @@ fn session() {
             state.remove("counter");
             assert_eq!(session.state().unwrap().clone(), state);
 
-            session.clear();
+            assert_eq!(session.clear().unwrap(), ());
             assert_eq!(session.state().unwrap().clone(), Map::new());
 
             state.clear();
@@ -145,25 +150,17 @@ fn session() {
             )
             .unwrap();
             assert_eq!(
-                serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
+                to_string(&session.state().unwrap().clone()).unwrap(),
                 r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
             );
 
-            assert_eq!(
-                session.state().unwrap().clone(),
-                Session::from(session.state().unwrap().clone())
-                    .state()
-                    .unwrap()
-                    .clone()
-            );
+            assert_eq!(session.save().await.unwrap(), ());
 
             println!("{} ==>", i);
             dbg!(session);
             println!("{} <==", i);
-        })
-        .join()
-        .unwrap();
+        });
     }
 
-    // dbg!(store);
+    dbg!(store);
 }
