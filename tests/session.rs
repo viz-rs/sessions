@@ -66,9 +66,9 @@ fn session() {
 
             assert_eq!(session.name(), name);
 
-            assert_eq!(session.set("counter", 144).unwrap(), None);
+            assert_eq!(session.set("counter", i).unwrap(), None);
             assert_eq!(session.set("number", 233).unwrap(), None);
-            assert_eq!(session.get::<usize>("counter").unwrap(), Some(144));
+            assert_eq!(session.get::<usize>("counter").unwrap(), Some(i));
             assert_eq!(session.get::<u32>("number").unwrap(), Some(233));
             assert_eq!(
                 session
@@ -107,7 +107,7 @@ fn session() {
             );
 
             let mut state = Map::new();
-            state.insert("counter".to_owned(), json!(144));
+            state.insert("counter".to_owned(), json!(i));
             state.insert("number".to_owned(), json!(233));
             state.insert(
                 "user".to_owned(),
@@ -119,15 +119,21 @@ fn session() {
             assert_eq!(session.state().unwrap().clone(), state);
             assert_eq!(
                 serde_json::to_string(&state).unwrap(),
-                r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
+                format!(
+                    r#"{{"counter":{},"number":233,"user":{{"age":37,"name":"Kobe"}}}}"#,
+                    i
+                )
             );
             assert_eq!(
                 serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
-                r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
+                format!(
+                    r#"{{"counter":{},"number":233,"user":{{"age":37,"name":"Kobe"}}}}"#,
+                    i
+                )
             );
 
             assert_eq!(session.remove("number").unwrap(), Some(json!(233)));
-            assert_eq!(session.remove::<f32>("counter").unwrap(), Some(144.0));
+            assert_eq!(session.remove::<f32>("counter").unwrap(), Some(i as f32));
             assert_eq!(session.get::<u32>("counter").unwrap(), None);
             assert_eq!(session.remove::<usize>("counter").unwrap(), None);
 
@@ -145,13 +151,17 @@ fn session() {
                 "{}"
             );
 
-            *session.state_mut().unwrap() = serde_json::from_str(
-                r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#,
-            )
+            *session.state_mut().unwrap() = serde_json::from_str(&format!(
+                r#"{{"counter":{},"number":233,"user":{{"age":37,"name":"Kobe"}}}}"#,
+                i
+            ))
             .unwrap();
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),
-                r#"{"counter":144,"number":233,"user":{"age":37,"name":"Kobe"}}"#
+                format!(
+                    r#"{{"counter":{},"number":233,"user":{{"age":37,"name":"Kobe"}}}}"#,
+                    i
+                )
             );
 
             assert_eq!(session.save().await.unwrap(), ());

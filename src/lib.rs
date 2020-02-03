@@ -17,10 +17,12 @@ mod mongodb;
 #[cfg(feature = "redis")]
 mod redis;
 
+mod options;
 mod session;
 mod state;
 mod store;
 
+pub use options::Options;
 pub use session::Session;
 pub use state::State;
 pub use store::Storable;

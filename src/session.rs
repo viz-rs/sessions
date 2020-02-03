@@ -31,7 +31,7 @@ impl Session {
     }
 
     pub fn name(&self) -> String {
-        self.name.to_owned()
+        self.name.clone()
     }
 
     pub fn store(&self) -> Arc<dyn Storable> {
