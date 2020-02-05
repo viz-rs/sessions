@@ -1,4 +1,3 @@
-use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
 use sessions::{Session, State, Storable};
@@ -6,7 +5,9 @@ use std::{
     collections::HashMap,
     error::Error as ErrorExt,
     fmt,
+    future::Future,
     io::{Error, ErrorKind},
+    pin::Pin,
     sync::{Arc, RwLock},
 };
 use tokio::runtime::Runtime;
@@ -35,7 +36,11 @@ fn session() {
     }
 
     impl Storable for MyStore {
-        fn save(&self, name: String, state: State) -> BoxFuture<'_, Result<(), Error>> {
+        fn save(
+            &self,
+            name: String,
+            state: State,
+        ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
             Box::pin(async move { self.save_data(name, state).await })
         }
 

@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Options {
     path: String,
     domain: String,
