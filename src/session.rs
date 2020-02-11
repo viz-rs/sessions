@@ -85,8 +85,6 @@ impl Session {
     }
 
     pub async fn save(&self) -> Result<(), Error> {
-        let name = self.name();
-        let data = self.state().unwrap().clone();
-        self.store.save(name, data).await
+        self.store.save(self).await
     }
 }

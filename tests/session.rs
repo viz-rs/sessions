@@ -38,9 +38,10 @@ fn session() {
     impl Storable for MyStore {
         fn save(
             &self,
-            name: String,
-            state: State,
+            session: &Session,
         ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+            let name = session.name();
+            let state = session.state().unwrap().clone();
             Box::pin(async move { self.save_data(name, state).await })
         }
 
