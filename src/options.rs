@@ -1,3 +1,5 @@
+//!  Options stores configuration for a session or session store.
+
 #[derive(Debug)]
 pub struct Options {
     path: String,

@@ -1,3 +1,8 @@
+//! Sessions
+//!
+//! Provides cookie and filesystem sessions and infrastructure for custom session backends.
+//!
+
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{from_value, to_value};
 use std::{

@@ -1,78 +1,41 @@
+use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
-use sessions::{Session, State, Storable};
-use std::{
-    collections::HashMap,
-    error::Error as ErrorExt,
-    fmt,
-    future::Future,
-    io::{Error, ErrorKind},
-    pin::Pin,
-    sync::{Arc, RwLock},
-};
+#[cfg(feature = "memory")]
+use sessions::MemoryStore;
+use sessions::{Session, Storable};
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 #[test]
+#[cfg(feature = "memory")]
 fn session() {
-    #[derive(Clone, Debug)]
-    struct MyStore {
-        values: Arc<RwLock<HashMap<String, String>>>,
-    }
-
-    impl MyStore {
-        fn new() -> Self {
-            Self {
-                values: Arc::new(RwLock::new(HashMap::new())),
-            }
-        }
-
-        async fn save_data(&self, name: String, state: State) -> Result<(), Error> {
-            self.values
-                .write()
-                .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-                .insert(name, serde_json::to_string(&state)?);
-            Ok(())
-        }
-    }
-
-    impl Storable for MyStore {
-        fn save(
-            &self,
-            session: &Session,
-        ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
-            let name = session.name();
-            let state = session.state().unwrap().clone();
-            Box::pin(async move { self.save_data(name, state).await })
-        }
-
-        fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Debug::fmt(&self.values, f)
-        }
-    }
-
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         age: u32,
         name: String,
     }
 
-    let store = MyStore::new();
+    let store = MemoryStore::new();
 
-    let store = Arc::new(store);
+    let arc_store = Arc::new(store);
 
-    let rt = Runtime::new().unwrap();
+    let mut rt = Runtime::new().unwrap();
+
+    let mut handlers = Vec::new();
 
     for i in 0..10 {
         let name = format!("trek-{}", i);
-        let store = store.clone();
+        let store = arc_store.clone();
 
-        rt.spawn(async move {
-            println!(" ========> {} <=========", i);
-            let session = Session::new(&name, store);
+        handlers.push(rt.spawn(async move {
+            // println!(" ========> {} <=========", i);
+            // let session = Session::new(&name, store);
+            let session = store.create(&name);
 
             assert_eq!(session.name(), name);
 
-            assert_eq!(session.set("counter", i).unwrap(), None);
+            assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
             assert_eq!(session.set("number", 233).unwrap(), None);
             assert_eq!(session.get::<usize>("counter").unwrap(), Some(i));
             assert_eq!(session.get::<u32>("number").unwrap(), Some(233));
@@ -172,11 +135,16 @@ fn session() {
 
             assert_eq!(session.save().await.unwrap(), ());
 
-            println!("{} ==>", i);
-            dbg!(session);
-            println!("{} <==", i);
-        });
+            // println!("{} ==>", i);
+            // dbg!(session);
+            // println!("{} <==", i);
+        }));
     }
 
-    dbg!(store);
+    rt.block_on(async {
+        join_all(handlers).await;
+        // println!("--------------------------------------");
+        dbg!(Arc::try_unwrap(arc_store).unwrap());
+        // println!("--------------------------------------");
+    });
 }

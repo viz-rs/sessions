@@ -1,8 +1,14 @@
+//! Storable Trait
+//!
+//! A trait for session store.
+
 use std::{fmt, future::Future, io::Error, pin::Pin};
 
 use crate::Session;
 
 pub trait Storable: Send + Sync + 'static {
+    fn create(&self, name: &str) -> Session;
+
     fn save(
         &self,
         session: &Session,

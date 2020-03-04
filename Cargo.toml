@@ -14,6 +14,7 @@ cookie = "0.13"
 mongodb = { version = "0.9", optional = true }
 
 [dev-dependencies]
+futures = "0.3"
 tokio = { version = "0.2", features = ["rt-core", "rt-util", "rt-threaded", "test-util"] }
 
 [features]
