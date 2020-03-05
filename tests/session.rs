@@ -173,6 +173,10 @@ fn session_in_memory() {
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(r#"{{"counter":{},"index":{}}}"#, count - 1, count)
             );
+
+            assert_eq!(session.save().await.unwrap(), ());
         }
+
+        // dbg!(Arc::try_unwrap(arc_store).unwrap());
     });
 }
