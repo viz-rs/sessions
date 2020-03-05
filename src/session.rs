@@ -20,23 +20,23 @@ pub struct Session {
     /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     state: Arc<RwLock<State>>,
-    name: String,
+    key: String,
     fresh: bool,
 }
 
 impl Session {
     #[inline]
-    pub fn new(name: &str, fresh: bool, store: Arc<impl Storable>) -> Self {
+    pub fn new(key: &str, fresh: bool, store: Arc<impl Storable>) -> Self {
         Self {
             store,
             fresh,
             state: Arc::default(),
-            name: name.to_owned(),
+            key: key.to_owned(),
         }
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn key(&self) -> String {
+        self.key.clone()
     }
 
     pub fn fresh(&self) -> bool {

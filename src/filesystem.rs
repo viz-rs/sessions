@@ -25,27 +25,27 @@ impl FilesystemStore {
         }
     }
 
-    // async fn save_data(&self, name: String, state: State) -> Result<(), Error> {
+    // async fn save_data(&self, key: String, state: State) -> Result<(), Error> {
     //     self.inner
     //         .write()
     //         .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-    //         .insert(name, state);
+    //         .insert(key, state);
     //     Ok(())
     // }
 }
 
 // impl Storable for MemoryStore {
-//     fn create(&self, name: &str) -> Session {
-//         Session::new(name, Arc::new(self.clone()))
+//     fn create(&self, key: &str) -> Session {
+//         Session::new(key, Arc::new(self.clone()))
 //     }
 
 //     fn save(
 //         &self,
 //         session: &Session,
 //     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
-//         let name = session.name();
+//         let key = session.key();
 //         let state = session.state().unwrap().clone();
-//         Box::pin(async move { self.save_data(name, state).await })
+//         Box::pin(async move { self.save_data(key, state).await })
 //     }
 
 //     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
