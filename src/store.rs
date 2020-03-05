@@ -7,9 +7,9 @@ use std::{fmt, future::Future, io::Error, pin::Pin};
 use crate::Session;
 
 pub trait Storable: Send + Sync + 'static {
-    fn get(&self, key: &str) -> Result<Session, Error>;
+    fn get(&self, sid: &str) -> Result<Session, Error>;
 
-    fn touch(&self, key: &str, fresh: bool) -> Session;
+    fn remove(&self, sid: &str) -> Result<(), Error>;
 
     fn save(
         &self,

@@ -16,27 +16,30 @@ use crate::Storable;
 
 #[derive(Debug)]
 pub struct Session {
+    /// Stores session
     store: Arc<dyn Storable>,
     /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     state: Arc<RwLock<State>>,
-    key: String,
+    /// session ID.
+    sid: String,
+    // session is fresh or not.
     fresh: bool,
 }
 
 impl Session {
     #[inline]
-    pub fn new(key: &str, fresh: bool, store: Arc<impl Storable>) -> Self {
+    pub fn new(sid: &str, fresh: bool, store: Arc<impl Storable>) -> Self {
         Self {
             store,
             fresh,
             state: Arc::default(),
-            key: key.to_owned(),
+            sid: sid.to_owned(),
         }
     }
 
-    pub fn key(&self) -> String {
-        self.key.clone()
+    pub fn sid(&self) -> String {
+        self.sid.clone()
     }
 
     pub fn fresh(&self) -> bool {
@@ -89,11 +92,11 @@ impl Session {
         })
     }
 
-    pub fn clear(&self) -> Result<(), Error> {
-        Ok(self.state_mut()?.clear())
-    }
-
     pub async fn save(&self) -> Result<(), Error> {
         self.store.save(self).await
+    }
+
+    pub fn clear(&self) -> Result<(), Error> {
+        Ok(self.state_mut()?.clear())
     }
 }

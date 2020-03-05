@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
 #[cfg(feature = "memory")]
 use sessions::MemoryStore;
-use sessions::{Session, Storable};
+use sessions::Storable;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -13,7 +13,7 @@ fn session_in_memory() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         age: u32,
-        key: String,
+        sid: String,
     }
 
     let store = MemoryStore::new();
@@ -25,15 +25,15 @@ fn session_in_memory() {
     let mut handlers = Vec::new();
 
     for i in 0..10 {
-        let key = format!("trek-{}", i);
+        let sid = format!("trek-{}", i);
         let store = arc_store.clone();
 
         handlers.push(rt.spawn(async move {
             // println!(" ========> {} <=========", i);
-            // let session = Session::new(&key, store);
-            let session = store.get(&key).unwrap();
+            // let session = Session::new(&sid, store);
+            let session = store.get(&sid).unwrap();
 
-            assert_eq!(session.key(), key);
+            assert_eq!(session.sid(), sid);
             assert_eq!(session.fresh(), true);
 
             assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
@@ -46,7 +46,7 @@ fn session_in_memory() {
                         "user",
                         User {
                             age: 23,
-                            key: "Jordan".to_owned(),
+                            sid: "Jordan".to_owned(),
                         }
                     )
                     .unwrap(),
@@ -58,13 +58,13 @@ fn session_in_memory() {
                         "user",
                         User {
                             age: 37,
-                            key: "Kobe".to_owned(),
+                            sid: "Kobe".to_owned(),
                         }
                     )
                     .unwrap(),
                 Some(User {
                     age: 23,
-                    key: "Jordan".to_owned(),
+                    sid: "Jordan".to_owned(),
                 })
             );
             let user: Option<User> = session.get::<User>("user").unwrap();
@@ -72,7 +72,7 @@ fn session_in_memory() {
                 user,
                 Some(User {
                     age: 37,
-                    key: "Kobe".to_owned(),
+                    sid: "Kobe".to_owned(),
                 })
             );
 
@@ -83,21 +83,21 @@ fn session_in_memory() {
                 "user".to_owned(),
                 json!(User {
                     age: 37,
-                    key: "Kobe".to_owned(),
+                    sid: "Kobe".to_owned(),
                 }),
             );
             assert_eq!(session.state().unwrap().clone(), state);
             assert_eq!(
                 serde_json::to_string(&state).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"age":37,"key":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
                     i
                 )
             );
             assert_eq!(
                 serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"age":37,"key":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
                     i
                 )
             );
@@ -122,14 +122,14 @@ fn session_in_memory() {
             );
 
             *session.state_mut().unwrap() = serde_json::from_str(&format!(
-                r#"{{"counter":{},"number":233,"user":{{"age":37,"key":"Kobe"}}}}"#,
+                r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
                 i
             ))
             .unwrap();
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"age":37,"key":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
                     i
                 )
             );
@@ -149,8 +149,8 @@ fn session_in_memory() {
         // println!("--------------------------------------");
 
         for i in 0..10 {
-            let key = format!("trek-{}", i);
-            let sess = arc_store.get(&key);
+            let sid = format!("trek-{}", i);
+            let sess = arc_store.get(&sid);
 
             assert_eq!(sess.is_ok(), true);
 
@@ -164,10 +164,10 @@ fn session_in_memory() {
 
             count += 1;
 
-            session.set("index", count);
+            assert_eq!(session.set("index", count).unwrap(), None);
 
-            session.remove::<User>("user");
-            session.remove::<i32>("number");
+            assert_eq!(session.remove::<User>("user").is_ok(), true);
+            assert_eq!(session.remove::<i32>("number").unwrap(), Some(233));
 
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),

@@ -1,4 +1,6 @@
 //! MemoryStore
+//!
+//! Stores the session in an in-memory store.
 
 use std::{
     collections::HashMap,
@@ -24,42 +26,48 @@ impl MemoryStore {
         }
     }
 
-    async fn save_data(&self, key: String, state: State) -> Result<(), Error> {
+    async fn put(&self, sid: String, state: State) -> Result<(), Error> {
         self.inner
             .write()
             .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-            .insert(key, state);
+            .insert(sid, state);
         Ok(())
     }
 }
 
 impl Storable for MemoryStore {
-    fn get(&self, key: &str) -> Result<Session, Error> {
+    fn get(&self, sid: &str) -> Result<Session, Error> {
         let store = self
             .inner
             .read()
             .map_err(|e| Error::new(ErrorKind::Other, e.description()))?;
 
-        Ok(if let Some(data) = store.get(key).cloned() {
-            let session = self.touch(key, false);
-            *session.state_mut().unwrap() = data;
-            session
-        } else {
-            self.touch(key, true)
-        })
+        let data = store.get(sid);
+        let fresh = data.is_none();
+        let session = Session::new(sid, fresh, Arc::new(self.clone()));
+
+        if fresh == false {
+            *session.state_mut().unwrap() = data.cloned().unwrap();
+        }
+
+        Ok(session)
     }
 
-    fn touch(&self, key: &str, fresh: bool) -> Session {
-        Session::new(key, fresh, Arc::new(self.clone()))
+    fn remove(&self, sid: &str) -> Result<(), Error> {
+        self.inner
+            .write()
+            .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
+            .remove(sid);
+        Ok(())
     }
 
     fn save(
         &self,
         session: &Session,
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
-        let key = session.key();
+        let sid = session.sid();
         let state = session.state().unwrap().clone();
-        Box::pin(async move { self.save_data(key, state).await })
+        Box::pin(async move { self.put(sid, state).await })
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
