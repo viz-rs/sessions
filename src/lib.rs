@@ -8,16 +8,16 @@
     missing_debug_implementations
 )]
 
-#[cfg(feature = "cookie")]
-mod cookie;
 #[cfg(feature = "memory")]
 mod memory;
 #[cfg(feature = "memory")]
 pub use memory::MemoryStore;
-#[cfg(feature = "mongodb")]
-mod mongodb;
-#[cfg(feature = "redis")]
-mod redis;
+// #[cfg(feature = "cookie")]
+// mod cookie;
+// #[cfg(feature = "mongodb")]
+// mod mongodb;
+// #[cfg(feature = "redis")]
+// mod redis;
 
 mod options;
 mod session;

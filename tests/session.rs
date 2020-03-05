@@ -7,9 +7,9 @@ use sessions::{Session, Storable};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-#[test]
 #[cfg(feature = "memory")]
-fn session() {
+#[test]
+fn session_in_memory() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         age: u32,
@@ -31,9 +31,10 @@ fn session() {
         handlers.push(rt.spawn(async move {
             // println!(" ========> {} <=========", i);
             // let session = Session::new(&name, store);
-            let session = store.create(&name);
+            let session = store.get(&name).unwrap();
 
             assert_eq!(session.name(), name);
+            assert_eq!(session.fresh(), true);
 
             assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
             assert_eq!(session.set("number", 233).unwrap(), None);
@@ -144,7 +145,34 @@ fn session() {
     rt.block_on(async {
         join_all(handlers).await;
         // println!("--------------------------------------");
-        dbg!(Arc::try_unwrap(arc_store).unwrap());
+        // dbg!(Arc::try_unwrap(arc_store).unwrap());
         // println!("--------------------------------------");
+
+        for i in 0..10 {
+            let name = format!("trek-{}", i);
+            let sess = arc_store.get(&name);
+
+            assert_eq!(sess.is_ok(), true);
+
+            let session = sess.unwrap();
+
+            assert_eq!(session.fresh(), false);
+
+            let mut count = session.get::<usize>("counter").unwrap().unwrap();
+
+            assert_eq!(count, i);
+
+            count += 1;
+
+            session.set("index", count);
+
+            session.remove::<User>("user");
+            session.remove::<i32>("number");
+
+            assert_eq!(
+                to_string(&session.state().unwrap().clone()).unwrap(),
+                format!(r#"{{"counter":{},"index":{}}}"#, count - 1, count)
+            );
+        }
     });
 }

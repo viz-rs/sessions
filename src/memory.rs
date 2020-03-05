@@ -12,7 +12,7 @@ use std::{
 
 use crate::{Session, State, Storable};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MemoryStore {
     inner: Arc<RwLock<HashMap<String, State>>>,
 }
@@ -34,8 +34,23 @@ impl MemoryStore {
 }
 
 impl Storable for MemoryStore {
-    fn create(&self, name: &str) -> Session {
-        Session::new(name, Arc::new(self.clone()))
+    fn get(&self, name: &str) -> Result<Session, Error> {
+        let store = self
+            .inner
+            .read()
+            .map_err(|e| Error::new(ErrorKind::Other, e.description()))?;
+
+        Ok(if let Some(data) = store.get(name).cloned() {
+            let session = self.touch(name, false);
+            *session.state_mut().unwrap() = data;
+            session
+        } else {
+            self.touch(name, true)
+        })
+    }
+
+    fn touch(&self, name: &str, fresh: bool) -> Session {
+        Session::new(name, fresh, Arc::new(self.clone()))
     }
 
     fn save(
@@ -49,13 +64,5 @@ impl Storable for MemoryStore {
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.inner, f)
-    }
-}
-
-impl Clone for MemoryStore {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-        }
     }
 }

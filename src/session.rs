@@ -21,22 +21,26 @@ pub struct Session {
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     state: Arc<RwLock<State>>,
     name: String,
-    is_new: bool,
+    fresh: bool,
 }
 
 impl Session {
     #[inline]
-    pub fn new(name: &str, store: Arc<impl Storable>) -> Self {
+    pub fn new(name: &str, fresh: bool, store: Arc<impl Storable>) -> Self {
         Self {
             store,
+            fresh,
             state: Arc::default(),
             name: name.to_owned(),
-            is_new: false,
         }
     }
 
     pub fn name(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn fresh(&self) -> bool {
+        self.fresh
     }
 
     pub fn store(&self) -> Arc<dyn Storable> {
