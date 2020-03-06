@@ -11,8 +11,8 @@ use tokio::{fs, runtime::Runtime};
 fn session_in_filesystem_with_tokio() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
-        no: u32,
         name: String,
+        no: u32,
     }
 
     let path = env::current_dir().unwrap().join("target").join("sessions");
@@ -46,8 +46,8 @@ fn session_in_filesystem_with_tokio() {
                     .set(
                         "user",
                         User {
-                            no: 23,
                             name: "Jordan".to_owned(),
+                            no: 23,
                         }
                     )
                     .unwrap(),
@@ -58,22 +58,22 @@ fn session_in_filesystem_with_tokio() {
                     .set(
                         "user",
                         User {
-                            no: 24,
                             name: "Kobe".to_owned(),
+                            no: 24,
                         }
                     )
                     .unwrap(),
                 Some(User {
+                    name: "Jordan".to_owned(),
                     no: 23,
-                    sid: "Jordan".to_owned(),
                 })
             );
             let user: Option<User> = session.get::<User>("user").unwrap();
             assert_eq!(
                 user,
                 Some(User {
-                    no: 24,
                     name: "Kobe".to_owned(),
+                    no: 24,
                 })
             );
 
@@ -83,22 +83,22 @@ fn session_in_filesystem_with_tokio() {
             state.insert(
                 "user".to_owned(),
                 json!(User {
-                    no: 24,
                     name: "Kobe".to_owned(),
+                    no: 24,
                 }),
             );
             assert_eq!(session.state().unwrap().clone(), state);
             assert_eq!(
                 serde_json::to_string(&state).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                     i
                 )
             );
             assert_eq!(
                 serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                     i
                 )
             );
@@ -123,14 +123,14 @@ fn session_in_filesystem_with_tokio() {
             );
 
             *session.state_mut().unwrap() = serde_json::from_str(&format!(
-                r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
+                r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                 i
             ))
             .unwrap();
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                     i
                 )
             );

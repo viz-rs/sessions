@@ -35,15 +35,15 @@ session.remove::<u32>("number").unwrap();       // Some(233)
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct User {
-    no: u32,
     name: String,
+    no: u32,
 }
 
 session.remove::<User>("user").is_ok();         // true
 
 session.set("user", User {
+    name: "Yao ming",
     no: 11,
-    name: "Yao ming"
 }).unwrap();                                    // None
 
 session.get::<User>("user").unwrap();           // Option<User>
