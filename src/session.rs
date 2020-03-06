@@ -1,7 +1,6 @@
-//! Sessions
+//! Session
 //!
-//! Provides cookie and filesystem sessions and infrastructure for custom session backends.
-//!
+//! Stores the values.
 
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{from_value, to_value};
@@ -11,35 +10,34 @@ use std::{
     sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
-use crate::State;
-use crate::Storable;
+use crate::{State, Storable};
 
 #[derive(Debug)]
 pub struct Session {
+    /// session ID, and it shoulds be an unique ID.
+    id: String,
     /// Stores session
     store: Arc<dyn Storable>,
     /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     state: Arc<RwLock<State>>,
-    /// session ID.
-    sid: String,
     /// session is fresh or not.
     fresh: bool,
 }
 
 impl Session {
     #[inline]
-    pub fn new(sid: &str, fresh: bool, store: Arc<impl Storable>) -> Self {
+    pub fn new(id: &str, fresh: bool, store: Arc<impl Storable>) -> Self {
         Self {
             store,
             fresh,
             state: Arc::default(),
-            sid: sid.to_owned(),
+            id: id.to_owned(),
         }
     }
 
-    pub fn sid(&self) -> String {
-        self.sid.clone()
+    pub fn id(&self) -> String {
+        self.id.clone()
     }
 
     pub fn fresh(&self) -> bool {

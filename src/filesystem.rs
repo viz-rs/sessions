@@ -22,18 +22,18 @@ impl FilesystemStore {
         Self { path }
     }
 
-    async fn put(&self, sid: String, state: State) -> Result<(), Error> {
-        fs::write(self.path.join(&sid), to_vec(&state)?).await
+    async fn put(&self, id: String, state: State) -> Result<(), Error> {
+        fs::write(self.path.join(&id), to_vec(&state)?).await
     }
 }
 
 impl Storable for FilesystemStore {
-    fn get(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>> {
-        let sid = sid.to_owned();
+    fn get(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>> {
+        let id = id.to_owned();
         Box::pin(async move {
-            let file = fs::read(self.path.join(&sid)).await;
+            let file = fs::read(self.path.join(&id)).await;
             let fresh = file.is_err();
-            let session = Session::new(&sid, fresh, Arc::new(self.clone()));
+            let session = Session::new(&id, fresh, Arc::new(self.clone()));
 
             if fresh == false {
                 let data = file?;
@@ -47,18 +47,18 @@ impl Storable for FilesystemStore {
         })
     }
 
-    fn remove(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
-        let sid = sid.to_owned();
-        Box::pin(async move { fs::remove_file(self.path.join(&sid)).await })
+    fn remove(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+        let id = id.to_owned();
+        Box::pin(async move { fs::remove_file(self.path.join(&id)).await })
     }
 
     fn save(
         &self,
         session: &Session,
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
-        let sid = session.sid();
+        let id = session.id();
         let state = session.state().unwrap().clone();
-        Box::pin(async move { self.put(sid, state).await })
+        Box::pin(async move { self.put(id, state).await })
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

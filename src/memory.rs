@@ -26,27 +26,27 @@ impl MemoryStore {
         }
     }
 
-    async fn put(&self, sid: String, state: State) -> Result<(), Error> {
+    async fn put(&self, id: String, state: State) -> Result<(), Error> {
         self.inner
             .write()
             .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-            .insert(sid, state);
+            .insert(id, state);
         Ok(())
     }
 }
 
 impl Storable for MemoryStore {
-    fn get(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>> {
-        let sid = sid.to_owned();
+    fn get(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>> {
+        let id = id.to_owned();
         Box::pin(async move {
             let store = self
                 .inner
                 .read()
                 .map_err(|e| Error::new(ErrorKind::Other, e.description()))?;
 
-            let state = store.get(&sid);
+            let state = store.get(&id);
             let fresh = state.is_none();
-            let session = Session::new(&sid, fresh, Arc::new(self.clone()));
+            let session = Session::new(&id, fresh, Arc::new(self.clone()));
 
             if fresh == false {
                 *session.state_mut().unwrap() = state.cloned().unwrap();
@@ -56,13 +56,13 @@ impl Storable for MemoryStore {
         })
     }
 
-    fn remove(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
-        let sid = sid.to_owned();
+    fn remove(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+        let id = id.to_owned();
         Box::pin(async move {
             self.inner
                 .write()
                 .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-                .remove(&sid);
+                .remove(&id);
 
             Ok(())
         })
@@ -72,9 +72,9 @@ impl Storable for MemoryStore {
         &self,
         session: &Session,
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
-        let sid = session.sid();
+        let id = session.id();
         let state = session.state().unwrap().clone();
-        Box::pin(async move { self.put(sid, state).await })
+        Box::pin(async move { self.put(id, state).await })
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

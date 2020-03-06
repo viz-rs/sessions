@@ -23,16 +23,16 @@ fn session_in_filesystem_with_async_std() {
     let mut handlers = Vec::new();
 
     for i in 0..10 {
-        let sid = format!("trek-{}", i);
+        let id = format!("trek-{}", i);
         let store = arc_store.clone();
 
         handlers.push(task::spawn(async move {
             // println!(" ========> {} <=========", i);
-            // let session = Session::new(&sid, store);
-            let session = store.get(&sid).await.unwrap();
-            // store.remove(&sid).await;
+            // let session = Session::new(&id, store);
+            let session = store.get(&id).await.unwrap();
+            // store.remove(&id).await;
 
-            assert_eq!(session.sid(), sid);
+            assert_eq!(session.id(), id);
             assert_eq!(session.fresh(), true);
 
             assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
@@ -150,8 +150,8 @@ fn session_in_filesystem_with_async_std() {
         // // println!("--------------------------------------");
 
         for i in 0..10 {
-            let sid = format!("trek-{}", i);
-            let sess = arc_store.get(&sid).await;
+            let id = format!("trek-{}", i);
+            let sess = arc_store.get(&id).await;
 
             assert_eq!(sess.is_ok(), true);
 
@@ -177,7 +177,7 @@ fn session_in_filesystem_with_async_std() {
 
             assert_eq!(session.save().await.unwrap(), ());
 
-            let sess = arc_store.get(&sid).await;
+            let sess = arc_store.get(&id).await;
             assert_eq!(sess.is_ok(), true);
             let session = sess.unwrap();
             assert_eq!(session.fresh(), false);
