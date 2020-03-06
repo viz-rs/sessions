@@ -10,8 +10,8 @@ use tokio::runtime::Runtime;
 fn session_in_memory() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
-        age: u32,
-        sid: String,
+        no: u32,
+        name: String,
     }
 
     let store = MemoryStore::new();
@@ -43,8 +43,8 @@ fn session_in_memory() {
                     .set(
                         "user",
                         User {
-                            age: 23,
-                            sid: "Jordan".to_owned(),
+                            no: 23,
+                            name: "Jordan".to_owned(),
                         }
                     )
                     .unwrap(),
@@ -55,22 +55,22 @@ fn session_in_memory() {
                     .set(
                         "user",
                         User {
-                            age: 37,
-                            sid: "Kobe".to_owned(),
+                            no: 24,
+                            name: "Kobe".to_owned(),
                         }
                     )
                     .unwrap(),
                 Some(User {
-                    age: 23,
-                    sid: "Jordan".to_owned(),
+                    no: 23,
+                    name: "Jordan".to_owned(),
                 })
             );
             let user: Option<User> = session.get::<User>("user").unwrap();
             assert_eq!(
                 user,
                 Some(User {
-                    age: 37,
-                    sid: "Kobe".to_owned(),
+                    no: 24,
+                    name: "Kobe".to_owned(),
                 })
             );
 
@@ -80,22 +80,22 @@ fn session_in_memory() {
             state.insert(
                 "user".to_owned(),
                 json!(User {
-                    age: 37,
-                    sid: "Kobe".to_owned(),
+                    no: 24,
+                    name: "Kobe".to_owned(),
                 }),
             );
             assert_eq!(session.state().unwrap().clone(), state);
             assert_eq!(
                 serde_json::to_string(&state).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
                     i
                 )
             );
             assert_eq!(
                 serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
                     i
                 )
             );
@@ -120,14 +120,14 @@ fn session_in_memory() {
             );
 
             *session.state_mut().unwrap() = serde_json::from_str(&format!(
-                r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
+                r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
                 i
             ))
             .unwrap();
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
-                    r#"{{"counter":{},"number":233,"user":{{"age":37,"sid":"Kobe"}}}}"#,
+                    r#"{{"counter":{},"number":233,"user":{{"no":24,"name":"Kobe"}}}}"#,
                     i
                 )
             );
