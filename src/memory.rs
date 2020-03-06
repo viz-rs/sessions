@@ -51,6 +51,7 @@ impl Storable for MemoryStore {
             if fresh == false {
                 *session.state_mut().unwrap() = state.cloned().unwrap();
             }
+
             Ok(session)
         })
     }
