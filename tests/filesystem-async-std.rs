@@ -1,3 +1,4 @@
+use async_std::{fs, task};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
@@ -5,11 +6,9 @@ use sessions::FilesystemStore;
 use sessions::Storable;
 use std::env;
 use std::sync::Arc;
-use tokio::fs;
-use tokio::runtime::Runtime;
 
 #[test]
-fn session_in_filesystem() {
+fn session_in_filesystem_with_async_std() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         age: u32,
@@ -21,15 +20,13 @@ fn session_in_filesystem() {
 
     let arc_store = Arc::new(store);
 
-    let mut rt = Runtime::new().unwrap();
-
     let mut handlers = Vec::new();
 
     for i in 0..10 {
         let sid = format!("trek-{}", i);
         let store = arc_store.clone();
 
-        handlers.push(rt.spawn(async move {
+        handlers.push(task::spawn(async move {
             // println!(" ========> {} <=========", i);
             // let session = Session::new(&sid, store);
             let session = store.get(&sid).await.unwrap();
@@ -144,7 +141,7 @@ fn session_in_filesystem() {
         }));
     }
 
-    rt.block_on(async {
+    task::block_on(async {
         let _ = fs::create_dir(path.clone()).await;
 
         join_all(handlers).await;

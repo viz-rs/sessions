@@ -2,8 +2,12 @@
 //!
 //! Stores the session in the filesystem store.
 
-use std::{fmt, future::Future, io::Error, path::PathBuf, pin::Pin, sync::Arc};
 use serde_json::{from_slice, to_vec};
+use std::{fmt, future::Future, io::Error, path::PathBuf, pin::Pin, sync::Arc};
+
+#[cfg(feature = "async-std")]
+use async_std::fs;
+#[cfg(feature = "tokio")]
 use tokio::fs;
 
 use crate::{Session, State, Storable};
