@@ -46,10 +46,7 @@ session.set("user", User {
     name: "Yao ming"
 }).unwrap();                                    // None
 
-session.set("user", User {
-    no: 11,
-    name: "Yao ming"
-}).unwrap();                                    // None
+session.get::<User>("user").unwrap();           // Option<User>
 
 store.remove(&sid).await;                       // Ok(())
 ```
