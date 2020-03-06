@@ -4,7 +4,6 @@ use serde_json::{json, to_string, Map};
 use sessions::FilesystemStore;
 use sessions::Storable;
 use std::env;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::fs;
 use tokio::runtime::Runtime;
@@ -146,7 +145,7 @@ fn session_in_filesystem() {
     }
 
     rt.block_on(async {
-        fs::create_dir(path.clone()).await;
+        let _ = fs::create_dir(path.clone()).await;
 
         join_all(handlers).await;
         // // println!("--------------------------------------");
@@ -193,6 +192,6 @@ fn session_in_filesystem() {
 
         // dbg!(Arc::try_unwrap(arc_store).unwrap());
 
-        fs::remove_dir_all(path.clone()).await;
+        let _ = fs::remove_dir_all(path.clone()).await;
     });
 }
