@@ -23,7 +23,7 @@ pub struct Session {
     state: Arc<RwLock<State>>,
     /// session ID.
     sid: String,
-    // session is fresh or not.
+    /// session is fresh or not.
     fresh: bool,
 }
 

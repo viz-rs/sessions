@@ -1,4 +1,6 @@
 //! CookieStore
+//!
+//! Stores the session in a HTTP cookie.
 
 pub struct CookieStore {}
 
