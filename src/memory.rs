@@ -36,29 +36,35 @@ impl MemoryStore {
 }
 
 impl Storable for MemoryStore {
-    fn get(&self, sid: &str) -> Result<Session, Error> {
-        let store = self
-            .inner
-            .read()
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))?;
+    fn get(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>> {
+        let sid = sid.to_owned();
+        Box::pin(async move {
+            let store = self
+                .inner
+                .read()
+                .map_err(|e| Error::new(ErrorKind::Other, e.description()))?;
 
-        let data = store.get(sid);
-        let fresh = data.is_none();
-        let session = Session::new(sid, fresh, Arc::new(self.clone()));
+            let state = store.get(&sid);
+            let fresh = state.is_none();
+            let session = Session::new(&sid, fresh, Arc::new(self.clone()));
 
-        if fresh == false {
-            *session.state_mut().unwrap() = data.cloned().unwrap();
-        }
-
-        Ok(session)
+            if fresh == false {
+                *session.state_mut().unwrap() = state.cloned().unwrap();
+            }
+            Ok(session)
+        })
     }
 
-    fn remove(&self, sid: &str) -> Result<(), Error> {
-        self.inner
-            .write()
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-            .remove(sid);
-        Ok(())
+    fn remove(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+        let sid = sid.to_owned();
+        Box::pin(async move {
+            self.inner
+                .write()
+                .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
+                .remove(&sid);
+
+            Ok(())
+        })
     }
 
     fn save(

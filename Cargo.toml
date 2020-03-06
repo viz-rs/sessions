@@ -12,6 +12,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 cookie = "0.13"
 mongodb = { version = "0.9", optional = true }
+tokio = { version = "0.2", default-features = false,  features = ["fs"] }
 
 [dev-dependencies]
 futures = "0.3"
@@ -20,3 +21,12 @@ tokio = { version = "0.2", features = ["rt-core", "rt-util", "rt-threaded", "tes
 [features]
 redis = []
 memory = []
+filesystem = ["tokio/fs"]
+
+[[test]]
+name = "memory"
+required-features = ["memory"]
+
+[[test]]
+name = "filesystem"
+required-features = ["filesystem"]

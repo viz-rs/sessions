@@ -7,14 +7,16 @@ use std::{fmt, future::Future, io::Error, pin::Pin};
 use crate::Session;
 
 pub trait Storable: Send + Sync + 'static {
-    fn get(&self, sid: &str) -> Result<Session, Error>;
+    fn get(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>>;
 
-    fn remove(&self, sid: &str) -> Result<(), Error>;
+    fn remove(&self, sid: &str) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>>;
 
     fn save(
         &self,
         session: &Session,
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>>;
+
+    /// @TODO: encode & decode the state
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }

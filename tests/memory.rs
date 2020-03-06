@@ -1,13 +1,11 @@
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
-#[cfg(feature = "memory")]
 use sessions::MemoryStore;
 use sessions::Storable;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-#[cfg(feature = "memory")]
 #[test]
 fn session_in_memory() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -31,7 +29,7 @@ fn session_in_memory() {
         handlers.push(rt.spawn(async move {
             // println!(" ========> {} <=========", i);
             // let session = Session::new(&sid, store);
-            let session = store.get(&sid).unwrap();
+            let session = store.get(&sid).await.unwrap();
 
             assert_eq!(session.sid(), sid);
             assert_eq!(session.fresh(), true);
@@ -150,7 +148,7 @@ fn session_in_memory() {
 
         for i in 0..10 {
             let sid = format!("trek-{}", i);
-            let sess = arc_store.get(&sid);
+            let sess = arc_store.get(&sid).await;
 
             assert_eq!(sess.is_ok(), true);
 

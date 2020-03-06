@@ -12,19 +12,28 @@
 mod memory;
 #[cfg(feature = "memory")]
 pub use memory::MemoryStore;
+
+#[cfg(feature = "filesystem")]
+mod filesystem;
+#[cfg(feature = "filesystem")]
+pub use filesystem::FilesystemStore;
+
 // #[cfg(feature = "cookie")]
 // mod cookie;
+
 // #[cfg(feature = "mongodb")]
 // mod mongodb;
 // #[cfg(feature = "redis")]
 // mod redis;
 
 mod options;
-mod session;
-mod state;
-mod store;
-
 pub use options::Options;
+
+mod session;
 pub use session::Session;
+
+mod state;
 pub use state::State;
+
+mod store;
 pub use store::Storable;
