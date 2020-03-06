@@ -11,7 +11,7 @@ WIP
 ```rust
 let store = Arc::new(CustomStore::new());
 
-let sid = format!("sid.{}", 0);                 // Generate an unique ID
+let sid = format!("sid.{}", 0);                 // Generates an UID
 let store = store.clone();
 let session = store.get(&sid).await.unwrap();   // Session
 
@@ -42,7 +42,7 @@ struct User {
 session.remove::<User>("user").is_ok();         // true
 
 session.set("user", User {
-    name: "Yao ming",
+    name: "Yao Ming",
     no: 11,
 }).unwrap();                                    // None
 
