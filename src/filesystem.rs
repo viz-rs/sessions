@@ -10,7 +10,7 @@ use async_std::fs;
 #[cfg(feature = "tokio")]
 use tokio::fs;
 
-use crate::{Session, Storable};
+use crate::{Session, SessionBeer, SessionStatus, Storable};
 
 #[derive(Clone, Debug)]
 pub struct FilesystemStore {
@@ -29,14 +29,17 @@ impl Storable for FilesystemStore {
         let id = id.to_owned();
         Box::pin(async move {
             let file = fs::read(self.path.join(&id)).await;
-            let fresh = file.is_err();
-            let session = Session::new(&id, fresh, Arc::new(self.clone()));
+            let session = Session::new(&id, Arc::new(self.clone()));
 
-            if fresh == false {
-                let data = file?;
-                // Should be a map `{}`
-                if data.len() > 1 {
-                    *session.state_mut().unwrap() = from_slice(&data)?;
+            {
+                let SessionBeer { state, status } = &mut *session.beer_mut()?;
+                if file.is_ok() {
+                    *status = SessionStatus::Existed;
+                    let data = file?;
+                    // Should be a map `{}`
+                    if data.len() > 1 {
+                        *state = from_slice(&data)?;
+                    }
                 }
             }
 

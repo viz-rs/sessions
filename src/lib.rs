@@ -33,7 +33,7 @@ mod options;
 pub use options::Options;
 
 mod session;
-pub use session::Session;
+pub use session::{Session, SessionBeer, SessionStatus};
 
 mod state;
 pub use state::State;

@@ -12,7 +12,7 @@ use std::{
     sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
-use crate::{Session, State, Storable};
+use crate::{Session, SessionBeer, SessionStatus, State, Storable};
 
 type Map = HashMap<String, State>;
 
@@ -45,12 +45,15 @@ impl Storable for MemoryStore {
     fn get(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>> {
         let id = id.to_owned();
         Box::pin(async move {
-            let state = self.store()?.get(&id).cloned();
-            let fresh = state.is_none();
-            let session = Session::new(&id, fresh, Arc::new(self.clone()));
+            let old_state = self.store()?.get(&id).cloned();
+            let session = Session::new(&id, Arc::new(self.clone()));
 
-            if fresh == false {
-                *session.state_mut().unwrap() = state.unwrap();
+            {
+                let SessionBeer { state, status } = &mut *session.beer_mut()?;
+                if old_state.is_some() {
+                    *state = old_state.unwrap();
+                    *status = SessionStatus::Existed;
+                }
             }
 
             Ok(session)
@@ -70,7 +73,7 @@ impl Storable for MemoryStore {
         session: &Session,
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         let id = session.id();
-        let state = session.state().unwrap().clone();
+        let state = session.state().unwrap();
         Box::pin(async move {
             self.store_mut()?.insert(id, state);
             Ok(())

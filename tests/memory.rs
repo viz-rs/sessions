@@ -1,8 +1,7 @@
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
-use sessions::MemoryStore;
-use sessions::Storable;
+use sessions::{MemoryStore, SessionStatus, Storable};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -32,7 +31,7 @@ fn session_in_memory() {
             let session = store.get(&id).await.unwrap();
 
             assert_eq!(session.id(), id);
-            assert_eq!(session.fresh(), true);
+            assert_eq!(session.status().unwrap(), SessionStatus::Created);
 
             assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
             assert_eq!(session.set("number", 233).unwrap(), None);
@@ -119,11 +118,20 @@ fn session_in_memory() {
                 "{}"
             );
 
-            *session.state_mut().unwrap() = serde_json::from_str(&format!(
+            // session.beer_mut().unwrap().state = serde_json::from_str(&format!(
+            // // *session.state_mut().unwrap() = serde_json::from_str(&format!(
+            //     r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
+            //     i
+            // ))
+            // .unwrap();
+            let _ = session.set_state(
+                serde_json::from_str(&format!(
+            // *session.state_mut().unwrap() = serde_json::from_str(&format!(
                 r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                 i
             ))
-            .unwrap();
+                .unwrap(),
+            );
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
@@ -154,7 +162,7 @@ fn session_in_memory() {
 
             let session = sess.unwrap();
 
-            assert_eq!(session.fresh(), false);
+            assert_eq!(session.status().unwrap(), SessionStatus::Existed);
 
             let mut count = session.get::<usize>("counter").unwrap().unwrap();
 
@@ -175,8 +183,14 @@ fn session_in_memory() {
             assert_eq!(session.save().await.unwrap(), ());
 
             let _ = session.destroy().await;
+
+            assert_eq!(session.status().unwrap(), SessionStatus::Destroyed);
+
+            // println!("{} ==>", i);
+            // dbg!(session);
+            // println!("{} <==", i);
         }
 
-        dbg!(Arc::try_unwrap(arc_store).unwrap());
+        // dbg!(Arc::try_unwrap(arc_store).unwrap());
     });
 }

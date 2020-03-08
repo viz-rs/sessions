@@ -15,7 +15,7 @@ let id = format!("id.{}", 0);                   // Generates an UID
 let store = store.clone();
 let session = store.get(&id).await.unwrap();    // Session
 
-session.id();                                  	// "id.0"
+session.id();                                   // "id.0"
 session.fresh();                                // true
 
 session.set::<usize>("counter", 0).unwrap();    // None
@@ -52,7 +52,7 @@ session.destroy().await;                        // Ok(())
 
 // or
 
-store.remove(&id).await;                       	// Ok(())
+store.remove(&id).await;                        // Ok(())
 ```
 
 - Memory

@@ -2,10 +2,8 @@ use async_std::{fs, task};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
-use sessions::FilesystemStore;
-use sessions::Storable;
-use std::env;
-use std::sync::Arc;
+use sessions::{FilesystemStore, SessionStatus, Storable};
+use std::{env, sync::Arc};
 
 #[test]
 fn session_in_filesystem_with_async_std() {
@@ -33,7 +31,7 @@ fn session_in_filesystem_with_async_std() {
             // store.remove(&id).await;
 
             assert_eq!(session.id(), id);
-            assert_eq!(session.fresh(), true);
+            assert_eq!(session.status().unwrap(), SessionStatus::Created);
 
             assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
             assert_eq!(session.set("number", 233).unwrap(), None);
@@ -120,11 +118,19 @@ fn session_in_filesystem_with_async_std() {
                 "{}"
             );
 
-            *session.state_mut().unwrap() = serde_json::from_str(&format!(
+            // *session.state_mut().unwrap() = serde_json::from_str(&format!(
+            //     r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
+            //     i
+            // ))
+            // .unwrap();
+            let _ = session.set_state(
+                serde_json::from_str(&format!(
+            // *session.state_mut().unwrap() = serde_json::from_str(&format!(
                 r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                 i
             ))
-            .unwrap();
+                .unwrap(),
+            );
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(
@@ -157,7 +163,7 @@ fn session_in_filesystem_with_async_std() {
 
             let session = sess.unwrap();
 
-            assert_eq!(session.fresh(), false);
+            assert_eq!(session.status().unwrap(), SessionStatus::Existed);
 
             let mut count = session.get::<usize>("counter").unwrap().unwrap();
 
@@ -180,13 +186,15 @@ fn session_in_filesystem_with_async_std() {
             let sess = arc_store.get(&id).await;
             assert_eq!(sess.is_ok(), true);
             let session = sess.unwrap();
-            assert_eq!(session.fresh(), false);
+            assert_eq!(session.status().unwrap(), SessionStatus::Existed);
             assert_eq!(
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(r#"{{"counter":{},"index":{}}}"#, count - 1, count)
             );
 
             let _ = session.destroy().await;
+
+            assert_eq!(session.status().unwrap(), SessionStatus::Destroyed);
         }
 
         // dbg!(Arc::try_unwrap(arc_store).unwrap());
