@@ -173,8 +173,10 @@ fn session_in_memory() {
             );
 
             assert_eq!(session.save().await.unwrap(), ());
+
+            let _ = session.destory().await;
         }
 
-        // dbg!(Arc::try_unwrap(arc_store).unwrap());
+        dbg!(Arc::try_unwrap(arc_store).unwrap());
     });
 }

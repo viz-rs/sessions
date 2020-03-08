@@ -185,6 +185,8 @@ fn session_in_filesystem_with_async_std() {
                 to_string(&session.state().unwrap().clone()).unwrap(),
                 format!(r#"{{"counter":{},"index":{}}}"#, count - 1, count)
             );
+
+            let _ = session.destory().await;
         }
 
         // dbg!(Arc::try_unwrap(arc_store).unwrap());

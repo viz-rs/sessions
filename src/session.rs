@@ -90,11 +90,16 @@ impl Session {
         })
     }
 
+    pub fn clear(&self) -> Result<(), Error> {
+        Ok(self.state_mut()?.clear())
+    }
+
     pub async fn save(&self) -> Result<(), Error> {
         self.store.save(self).await
     }
 
-    pub fn clear(&self) -> Result<(), Error> {
-        Ok(self.state_mut()?.clear())
+    pub async fn destory(&self) -> Result<(), Error> {
+        self.store.remove(&self.id).await?;
+        Ok(())
     }
 }
