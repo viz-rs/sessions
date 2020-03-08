@@ -9,14 +9,16 @@ use std::{
     future::Future,
     io::{Error, ErrorKind},
     pin::Pin,
-    sync::{Arc, RwLock},
+    sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
 use crate::{Session, State, Storable};
 
+type Map = HashMap<String, State>;
+
 #[derive(Clone, Debug)]
 pub struct MemoryStore {
-    inner: Arc<RwLock<HashMap<String, State>>>,
+    inner: Arc<RwLock<Map>>,
 }
 
 impl MemoryStore {
@@ -43,17 +45,12 @@ impl Storable for MemoryStore {
     fn get(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>> {
         let id = id.to_owned();
         Box::pin(async move {
-            let store = self
-                .inner
-                .read()
-                .map_err(|e| Error::new(ErrorKind::Other, e.description()))?;
-
-            let state = store.get(&id);
+            let state = self.store()?.get(&id).cloned();
             let fresh = state.is_none();
             let session = Session::new(&id, fresh, Arc::new(self.clone()));
 
             if fresh == false {
-                *session.state_mut().unwrap() = state.cloned().unwrap();
+                *session.state_mut().unwrap() = state.unwrap();
             }
 
             Ok(session)
@@ -63,10 +60,7 @@ impl Storable for MemoryStore {
     fn remove(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         let id = id.to_owned();
         Box::pin(async move {
-            self.inner
-                .write()
-                .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-                .remove(&id);
+            self.store_mut()?.remove(&id);
             Ok(())
         })
     }
