@@ -26,12 +26,16 @@ impl MemoryStore {
         }
     }
 
-    async fn put(&self, id: String, state: State) -> Result<(), Error> {
+    fn store(&self) -> Result<RwLockReadGuard<'_, Map>, Error> {
+        self.inner
+            .read()
+            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+    }
+
+    fn store_mut(&self) -> Result<RwLockWriteGuard<'_, Map>, Error> {
         self.inner
             .write()
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
-            .insert(id, state);
-        Ok(())
+            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
     }
 }
 
@@ -63,7 +67,6 @@ impl Storable for MemoryStore {
                 .write()
                 .map_err(|e| Error::new(ErrorKind::Other, e.description()))?
                 .remove(&id);
-
             Ok(())
         })
     }
@@ -74,7 +77,10 @@ impl Storable for MemoryStore {
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         let id = session.id();
         let state = session.state().unwrap().clone();
-        Box::pin(async move { self.put(id, state).await })
+        Box::pin(async move {
+            self.store_mut()?.insert(id, state);
+            Ok(())
+        })
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

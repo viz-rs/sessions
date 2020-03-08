@@ -11,9 +11,9 @@ WIP
 ```rust
 let store = Arc::new(CustomStore::new());
 
-let id = format!("id.{}", 0);                 	// Generates an UID
+let id = format!("id.{}", 0);                   // Generates an UID
 let store = store.clone();
-let session = store.get(&id).await.unwrap();   	// Session
+let session = store.get(&id).await.unwrap();    // Session
 
 session.id();                                  	// "id.0"
 session.fresh();                                // true
@@ -25,9 +25,9 @@ session.get::<u32>("number").unwrap();          // Some(233)
 
 session.save().await;                           // Ok(())
 
-let session = store.get(&id).await.unwrap();   	// Session
+let session = store.get(&id).await.unwrap();    // Session
 
-session.id();                                  	// "id.0"
+session.id();                                   // "id.0"
 session.fresh();                                // false
 
 session.remove::<usize>("counter").unwrap();    // Some(0)
@@ -54,6 +54,8 @@ store.remove(&id).await;                       	// Ok(())
 - Memory
 
 - Filesystem
+
+- sled
 
 - Redis
 

@@ -10,7 +10,7 @@ use async_std::fs;
 #[cfg(feature = "tokio")]
 use tokio::fs;
 
-use crate::{Session, State, Storable};
+use crate::{Session, Storable};
 
 #[derive(Clone, Debug)]
 pub struct FilesystemStore {
@@ -18,12 +18,9 @@ pub struct FilesystemStore {
 }
 
 impl FilesystemStore {
+    #[inline]
     pub fn new(path: PathBuf) -> Self {
         Self { path }
-    }
-
-    async fn put(&self, id: String, state: State) -> Result<(), Error> {
-        fs::write(self.path.join(&id), to_vec(&state)?).await
     }
 }
 
@@ -58,7 +55,7 @@ impl Storable for FilesystemStore {
     ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
         let id = session.id();
         let state = session.state().unwrap().clone();
-        Box::pin(async move { self.put(id, state).await })
+        Box::pin(async move { fs::write(self.path.join(&id), to_vec(&state)?).await })
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
