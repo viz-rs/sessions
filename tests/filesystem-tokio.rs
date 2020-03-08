@@ -188,7 +188,7 @@ fn session_in_filesystem_with_tokio() {
                 format!(r#"{{"counter":{},"index":{}}}"#, count - 1, count)
             );
 
-            let _ = session.destory().await;
+            let _ = session.destroy().await;
         }
 
         // dbg!(Arc::try_unwrap(arc_store).unwrap());

@@ -98,7 +98,7 @@ impl Session {
         self.store.save(self).await
     }
 
-    pub async fn destory(&self) -> Result<(), Error> {
+    pub async fn destroy(&self) -> Result<(), Error> {
         self.store.remove(&self.id).await?;
         Ok(())
     }

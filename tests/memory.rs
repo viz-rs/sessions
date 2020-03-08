@@ -174,7 +174,7 @@ fn session_in_memory() {
 
             assert_eq!(session.save().await.unwrap(), ());
 
-            let _ = session.destory().await;
+            let _ = session.destroy().await;
         }
 
         dbg!(Arc::try_unwrap(arc_store).unwrap());

@@ -48,6 +48,10 @@ session.set("user", User {
 
 session.get::<User>("user").unwrap();           // Option<User>
 
+session.destroy().await;                        // Ok(())
+
+// or
+
 store.remove(&id).await;                       	// Ok(())
 ```
 
