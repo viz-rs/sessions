@@ -16,7 +16,8 @@ let store = store.clone();
 let session = store.get(&id).await.unwrap();    // Session
 
 session.id();                                   // "id.0"
-session.fresh();                                // true
+session.status().unwrap();                      // SessionStatus::Created
+session.state().unwrap();                       // State
 
 session.set::<usize>("counter", 0).unwrap();    // None
 session.set("number", 233).unwrap();            // None
@@ -28,7 +29,7 @@ session.save().await;                           // Ok(())
 let session = store.get(&id).await.unwrap();    // Session
 
 session.id();                                   // "id.0"
-session.fresh();                                // false
+session.status().unwrap();                      // SessionStatus::Existed
 
 session.remove::<usize>("counter").unwrap();    // Some(0)
 session.remove::<u32>("number").unwrap();       // Some(233)
@@ -50,6 +51,7 @@ session.get::<User>("user").unwrap();           // Option<User>
 
 session.destroy().await;                        // Ok(())
 
+session.status().unwrap();                      // SessionStatus::Destroyed
 // or
 
 store.remove(&id).await;                        // Ok(())
