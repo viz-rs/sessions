@@ -1,16 +1,24 @@
+#![doc(html_root_url = "https://docs.rs/sessions/0.1.0")]
+#![deny(unsafe_code)]
+#![warn(
+    missing_debug_implementations,
+    missing_docs,
+    rust_2018_idioms,
+    nonstandard_style,
+    future_incompatible
+)]
+#![deny(intra_doc_link_resolution_failure)]
+#![doc(test(
+    no_crate_inject,
+    attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
+))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 //! Sessions
 //!
 //! Provides memory and filesystem sessions and infrastructure
 //! for custom session backends.
 //!
-
-#![deny(unsafe_code)]
-#![warn(
-    nonstandard_style,
-    rust_2018_idioms,
-    future_incompatible,
-    missing_debug_implementations
-)]
 
 #[cfg(feature = "memory")]
 mod memory;

@@ -86,6 +86,8 @@ store.remove(&id).await;                        // Ok(())
 
 - Redis
 
+- Memcached
+
 - Mongodb
 
 - PostgreSQL

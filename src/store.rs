@@ -1,11 +1,10 @@
-//! Storable Trait
-//!
-//! A trait for session store.
-
 use std::{fmt, future::Future, io::Error, pin::Pin};
 
 use crate::Session;
 
+/// Storable Trait
+///
+/// A trait for session store.
 pub trait Storable: Send + Sync + 'static {
     /// Gets a session by the id.
     fn get(&self, id: &str) -> Pin<Box<dyn Future<Output = Result<Session, Error>> + Send + '_>>;

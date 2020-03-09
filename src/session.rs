@@ -41,6 +41,7 @@ pub struct Session {
 }
 
 impl Session {
+    /// Creates new session.
     #[inline]
     pub fn new(id: &str, store: Arc<impl Storable>) -> Self {
         Self {
@@ -168,11 +169,16 @@ impl Session {
     }
 }
 
+/// Session Status
 #[derive(Debug, Clone, PartialEq)]
 pub enum SessionStatus {
+    /// Session is created.
     Created,
+    /// Session is existed.
     Existed,
+    /// Session is changed.
     Changed,
+    /// Session is destroyed.
     Destroyed,
 }
 
@@ -182,8 +188,11 @@ impl Default for SessionStatus {
     }
 }
 
+/// A Session Beer
 #[derive(Debug, Clone, Default)]
 pub struct SessionBeer {
+    /// Stores the values.
     pub state: State,
+    /// Stores the status.
     pub status: SessionStatus,
 }
