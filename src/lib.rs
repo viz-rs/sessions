@@ -1,6 +1,7 @@
 //! Sessions
 //!
-//! Provides cookie and filesystem sessions and infrastructure for custom session backends.
+//! Provides memory and filesystem sessions and infrastructure
+//! for custom session backends.
 //!
 
 #![deny(unsafe_code)]

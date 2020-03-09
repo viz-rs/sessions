@@ -12,32 +12,29 @@ use std::{
 
 use crate::{State, Storable};
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum SessionStatus {
-    Created,
-    Existed,
-    Changed,
-    Destroyed,
-}
-
-impl Default for SessionStatus {
-    fn default() -> Self {
-        SessionStatus::Created
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct SessionBeer {
-    pub state: State,
-    pub status: SessionStatus,
-}
-
+/// Session stores the values.
+///
+/// # Examples
+///
+/// ```
+/// let id = uuid();
+/// let store = Arc::new(CustomStore::new());
+/// let session = Session::new(&id, store.clone());
+///
+/// session.set("counter", 0);
+/// session.get::<usize>("counter");
+/// session.remove("counter");
+///
+/// session.save().await?;
+/// session.destroy().await?;
+/// ```
 #[derive(Debug)]
 pub struct Session {
-    /// session ID, and it shoulds be an unique ID.
+    /// The session ID, and it shoulds be an unique ID.
     id: String,
-    /// Stores session
+    /// References the store.
     store: Arc<dyn Storable>,
+    /// A ssession beer.
     /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     beer: Arc<RwLock<SessionBeer>>,
@@ -53,44 +50,53 @@ impl Session {
         }
     }
 
+    /// Returns the session id.
     pub fn id(&self) -> String {
         self.id.clone()
     }
 
+    /// References the store.
     pub fn store(&self) -> Arc<dyn Storable> {
         self.store.clone()
     }
 
-    pub fn status(&self) -> Result<SessionStatus, Error> {
-        Ok(self.beer()?.status.clone())
-    }
-
-    pub fn set_status(&self, status: SessionStatus) -> Result<(), Error> {
-        self.beer_mut()?.status = status;
-        Ok(())
-    }
-
-    pub fn state(&self) -> Result<State, Error> {
-        Ok(self.beer()?.state.clone())
-    }
-
-    pub fn set_state(&self, state: State) -> Result<(), Error> {
-        self.beer_mut()?.state = state;
-        Ok(())
-    }
-
+    /// Reads the session beer.
     pub fn beer(&self) -> Result<RwLockReadGuard<'_, SessionBeer>, Error> {
         self.beer
             .read()
             .map_err(|e| Error::new(ErrorKind::Other, e.description()))
     }
 
+    /// Writes the session beer.
     pub fn beer_mut(&self) -> Result<RwLockWriteGuard<'_, SessionBeer>, Error> {
         self.beer
             .write()
             .map_err(|e| Error::new(ErrorKind::Other, e.description()))
     }
 
+    /// Gets the session status
+    pub fn status(&self) -> Result<SessionStatus, Error> {
+        Ok(self.beer()?.status.clone())
+    }
+
+    /// Overrides a new status on this session
+    pub fn set_status(&self, status: SessionStatus) -> Result<(), Error> {
+        self.beer_mut()?.status = status;
+        Ok(())
+    }
+
+    /// Gets the session state
+    pub fn state(&self) -> Result<State, Error> {
+        Ok(self.beer()?.state.clone())
+    }
+
+    /// Overrides a new state on this session
+    pub fn set_state(&self, state: State) -> Result<(), Error> {
+        self.beer_mut()?.state = state;
+        Ok(())
+    }
+
+    /// Gets a reference to the value corresponding to the key.
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
         Ok(if let Some(val) = self.beer()?.state.get(key).cloned() {
             from_value(val)?
@@ -99,14 +105,24 @@ impl Session {
         })
     }
 
+    /// Sets a key-value pair into the state.
+    ///
+    /// If the state did not have this key present, `None` is returned.
+    ///
+    /// If the state did have this key present, the value is updated, and the old
+    /// value is returned.
     pub fn set<T: DeserializeOwned + Serialize>(
         &self,
         key: &str,
         val: T,
     ) -> Result<Option<T>, Error> {
-        let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
+        // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
         Ok(
-            if let Some(prev) = state.insert(key.to_owned(), to_value(val)?) {
+            if let Some(prev) = self
+                .beer_mut()?
+                .state
+                .insert(key.to_owned(), to_value(val)?)
+            {
                 // if *status != SessionStatus::Changed {
                 //     *status = SessionStatus::Changed;
                 // }
@@ -117,9 +133,11 @@ impl Session {
         )
     }
 
+    /// Removes a key from the state, returning the value at the key if the key
+    /// was previously in the state.
     pub fn remove<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
-        let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
-        Ok(if let Some(val) = state.remove(key) {
+        // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
+        Ok(if let Some(val) = self.beer_mut()?.state.remove(key) {
             // if *status != SessionStatus::Changed {
             //     *status = SessionStatus::Changed;
             // }
@@ -140,9 +158,32 @@ impl Session {
     }
 
     /// Destroys this session.
+    ///
+    /// After changes session status to [`SessionStatus::Destroyed`].
+    /// So we can check the session status when want to clean client cookie.
     pub async fn destroy(&self) -> Result<(), Error> {
         self.store.remove(&self.id).await?;
         self.set_status(SessionStatus::Destroyed)?;
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum SessionStatus {
+    Created,
+    Existed,
+    Changed,
+    Destroyed,
+}
+
+impl Default for SessionStatus {
+    fn default() -> Self {
+        SessionStatus::Created
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SessionBeer {
+    pub state: State,
+    pub status: SessionStatus,
 }

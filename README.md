@@ -1,8 +1,27 @@
-## sessions
+<h1 align="center">Sessions</h1>
+<div align="center">
+ <strong>
+  Sessions provides memory and filesystem sessions and infrastructure for custom session backends.
+ </strong>
+</div>
 
-Sessions provides cookie and filesystem sessions and infrastructure for custom session backends.
-
-WIP
+<div align="center">
+  <!-- Crates version -->
+  <a href="https://crates.io/crates/sessions">
+    <img src="https://img.shields.io/crates/v/sessions.svg?style=flat-square"
+    alt="Crates.io version" />
+  </a>
+  <!-- Downloads -->
+  <a href="https://crates.io/crates/sessions">
+    <img src="https://img.shields.io/crates/d/sessions.svg?style=flat-square"
+      alt="Download" />
+  </a>
+  <!-- docs.rs docs -->
+  <a href="https://docs.rs/sessions">
+    <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square"
+      alt="docs.rs docs" />
+  </a>
+</div>
 
 ### Features
 
