@@ -5,6 +5,8 @@
  </strong>
 </div>
 
+<br />
+
 <div align="center">
   <!-- Crates version -->
   <a href="https://crates.io/crates/sessions">
