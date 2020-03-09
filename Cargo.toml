@@ -1,9 +1,10 @@
 [package]
 name = "sessions"
-version = "0.0.0"
+version = "0.1.0"
 authors = ["Fangdun Cai <cfddream@gmail.com>"]
 edition = "2018"
 description = "Sessions"
+documentation = "https://docs.rs/sessions"
 license = "MIT/Apache-2.0"
 
 [dependencies]
@@ -21,7 +22,7 @@ futures = "0.3"
 tokio = { version = "0.2", features = ["rt-core", "rt-util", "rt-threaded", "test-util"] }
 
 [features]
-redis = []
+# redis = []
 memory = []
 filesystem = []
 

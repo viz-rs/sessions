@@ -1,7 +1,3 @@
-//! FilesystemStore
-//!
-//! Stores the session in the filesystem store.
-
 use serde_json::{from_slice, to_vec};
 use std::{fmt, future::Future, io::Error, path::PathBuf, pin::Pin, sync::Arc};
 
@@ -12,12 +8,16 @@ use tokio::fs;
 
 use crate::{Session, SessionBeer, SessionStatus, Storable};
 
+/// FilesystemStore
+///
+/// Stores the session in the filesystem store.
 #[derive(Clone, Debug)]
 pub struct FilesystemStore {
     path: PathBuf,
 }
 
 impl FilesystemStore {
+    /// Creates new Filesystem Store
     #[inline]
     pub fn new(path: PathBuf) -> Self {
         Self { path }

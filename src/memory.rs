@@ -1,7 +1,3 @@
-//! MemoryStore
-//!
-//! Stores the session in an in-memory store.
-
 use std::{
     collections::HashMap,
     error::Error as ErrorExt,
@@ -16,12 +12,17 @@ use crate::{Session, SessionBeer, SessionStatus, State, Storable};
 
 type Map = HashMap<String, State>;
 
+/// MemoryStore
+///
+/// Stores the session in an in-memory store.
 #[derive(Clone, Debug)]
 pub struct MemoryStore {
     inner: Arc<RwLock<Map>>,
 }
 
 impl MemoryStore {
+    /// Creates new Memory Store
+    #[inline]
     pub fn new() -> Self {
         Self {
             inner: Arc::default(),
