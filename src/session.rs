@@ -34,7 +34,7 @@ pub struct Session {
     id: String,
     /// References the store.
     store: Arc<dyn Storable>,
-    /// A ssession beer.
+    /// A session beer.
     /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
     beer: Arc<RwLock<SessionBeer>>,

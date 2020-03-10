@@ -1,5 +1,4 @@
-//!  Options stores configuration for a session or session store.
-
+///  Options stores configuration for a session or session store.
 #[derive(Debug)]
 pub struct Options {
     path: String,
@@ -12,3 +11,6 @@ pub struct Options {
     secure: bool,
     http_only: bool,
 }
+
+// impl Default for Options {
+// }

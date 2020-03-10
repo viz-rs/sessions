@@ -19,7 +19,10 @@ async-std = { version = "1.5", optional = true }
 
 [dev-dependencies]
 futures = "0.3"
-tokio = { version = "0.2", features = ["rt-core", "rt-util", "rt-threaded", "test-util"] }
+tokio = { version = "0.2", features = ["rt-core", "rt-util", "rt-threaded", "test-util", "macros"] }
+hyper = "0.13"
+nanoid = "0.3"
+bytes = "0.5"
 
 [features]
 # redis = []
@@ -29,6 +32,10 @@ filesystem = []
 [[test]]
 name = "memory"
 required-features = ["memory"]
+
+[[test]]
+name = "memory-hyper"
+required-features = ["memory", "tokio"]
 
 [[test]]
 name = "filesystem-tokio"
