@@ -1,4 +1,5 @@
 use cookie::{Cookie, CookieJar};
+use redis::Client as RedisClient;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_value};
 use sessions::{RedisStore, Session, SessionStatus, Storable};
@@ -9,7 +10,6 @@ use std::{
 };
 use time::Duration;
 use tokio::runtime::Runtime;
-use redis::Client as RedisClient;
 use warp::{
     http::{header, Response},
     hyper::{Body, Client, HeaderMap, Method, Request},
