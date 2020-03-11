@@ -30,10 +30,10 @@ mod fs_store;
 #[cfg(feature = "fs-store")]
 pub use fs_store::FilesystemStore;
 
-#[cfg(feature = "redis-store")]
-mod redis_store;
-#[cfg(feature = "redis-store")]
-pub use redis_store::RedisStore;
+// #[cfg(feature = "redis-store")]
+// mod redis_store;
+// #[cfg(feature = "redis-store")]
+// pub use redis_store::RedisStore;
 
 mod session;
 pub use session::{Session, SessionBeer, SessionStatus};

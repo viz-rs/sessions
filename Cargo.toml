@@ -16,7 +16,7 @@ cookie = { version = "0.13", features = ["secure", "percent-encode"] }
 nanoid = { version = "0.3", optional = true }
 tokio = { version = "0.2", default-features = false,  features = ["fs", "sync"], optional = true }
 async-std = { version = "1.5", optional = true }
-redis = { git = "https://github.com/mitsuhiko/redis-rs.git", branch = 'master', default-features = false, features = ["tokio-comp", "async-std-comp"], optional = true }
+# redis = { git = "https://github.com/mitsuhiko/redis-rs.git", branch = 'master', version = "0.15.2-alpha.0", default-features = false, features = ["tokio-comp", "async-std-comp"], optional = true }
 # mongodb = { version = "0.9", optional = true }
 
 [dev-dependencies]
@@ -32,9 +32,9 @@ time = "0.2"
 [features]
 default = ["nanoid"]
 # default = ["tokio"]
-redis-store = []
-redis-store-tokio = ["redis-store", "redis/tokio-comp"]
-redis-store-async-std = ["redis-store", "redis/async-std-comp"]
+# redis-store = []
+# redis-store-tokio = ["redis-store", "redis/tokio-comp"]
+# redis-store-async-std = ["redis-store", "redis/async-std-comp"]
 memory-store = []
 fs-store = []
 
@@ -58,6 +58,6 @@ required-features = ["fs-store", "tokio"]
 name = "fs-async-std"
 required-features = ["fs-store", "async-std"]
 
-[[test]]
-name = "redis-warp"
-required-features = ["redis-store-tokio", "tokio"]
+# [[test]]
+# name = "redis-warp"
+# required-features = ["redis-store-tokio", "tokio"]
