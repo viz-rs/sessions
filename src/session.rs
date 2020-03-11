@@ -19,21 +19,6 @@ use std::{
 use crate::{State, Storable};
 
 /// Session stores the values.
-///
-/// # Examples
-///
-/// ```
-/// let id = uuid();
-/// let store = Arc::new(CustomStore::new());
-/// let session = Session::new(&id, store.clone());
-///
-/// session.set("counter", 0);
-/// session.get::<usize>("counter");
-/// session.remove("counter");
-///
-/// session.save().await?;
-/// session.destroy().await?;
-/// ```
 #[derive(Debug)]
 pub struct Session {
     /// References the store.

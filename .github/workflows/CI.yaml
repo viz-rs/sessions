@@ -1,0 +1,90 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  build_and_test:
+    name: Build and test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        rust: [stable]
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Install ${{ matrix.rust }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+
+      - name: check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all --bins --examples
+
+      - name: tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all
+
+      - name: memory
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --test memory --features 'memory-store tokio'
+
+      - name: memory-hyper
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --test memory-hyper --features 'memory-store tokio'
+
+      - name: memory-warp
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --test memory-warp --features 'memory-store tokio'
+
+      - name: fs-tokio
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --test fs-tokio --features 'fs-store tokio'
+
+      - name: fs-async-std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --test fs-async-std --features 'fs-store async-std'
+
+      - name: redis-warp
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --test redis-warp --features 'redis-store-tokio tokio'
+
+  check_fmt_and_docs:
+    name: Checking fmt and docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt
+
+      - name: fmt
+        run: cargo fmt --all -- --check
+
+      - name: Docs
+        run: cargo doc
