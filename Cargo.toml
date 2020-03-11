@@ -16,7 +16,7 @@ cookie = { version = "0.13", features = ["secure", "percent-encode"] }
 nanoid = { version = "0.3", optional = true }
 tokio = { version = "0.2", default-features = false,  features = ["fs", "sync"], optional = true }
 async-std = { version = "1.5", optional = true }
-redis = { git = "https://github.com/mitsuhiko/redis-rs.git", default-features = false, features = ["tokio-comp", "async-std-comp"], optional = true }
+redis = { git = "https://github.com/mitsuhiko/redis-rs.git", branch = 'master', default-features = false, features = ["tokio-comp", "async-std-comp"], optional = true }
 # mongodb = { version = "0.9", optional = true }
 
 [dev-dependencies]
