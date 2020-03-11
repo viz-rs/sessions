@@ -2,7 +2,7 @@ use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
 use sessions::{MemoryStore, SessionStatus, Storable};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tokio::runtime::Runtime;
 
 #[test]
@@ -12,6 +12,8 @@ fn session_in_memory() {
         name: String,
         no: u32,
     }
+
+    let sids = Arc::new(RwLock::new(Vec::new()));
 
     let store = MemoryStore::new();
 
@@ -24,13 +26,14 @@ fn session_in_memory() {
     for i in 0..10 {
         let id = format!("trek-{}", i);
         let store = arc_store.clone();
+        let sids = sids.clone();
 
         handlers.push(rt.spawn(async move {
             // println!(" ========> {} <=========", i);
             // let session = Session::new(&id, store);
             let session = store.get(&id).await.unwrap();
 
-            assert_eq!(session.id(), id);
+            assert_eq!(session.id().unwrap(), "".to_owned());
             assert_eq!(session.status().unwrap(), SessionStatus::Created);
 
             assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
@@ -142,6 +145,10 @@ fn session_in_memory() {
 
             assert_eq!(session.save().await.unwrap(), ());
 
+            assert_eq!(session.id().unwrap().len(), 32);
+
+            sids.write().unwrap().push((i, session.id().unwrap()));
+
             // println!("{} ==>", i);
             // dbg!(session);
             // println!("{} <==", i);
@@ -151,12 +158,11 @@ fn session_in_memory() {
     rt.block_on(async {
         join_all(handlers).await;
         // println!("--------------------------------------");
-        // dbg!(Arc::try_unwrap(arc_store).unwrap());
+        // dbg!(&arc_store);
         // println!("--------------------------------------");
 
-        for i in 0..10 {
-            let id = format!("trek-{}", i);
-            let sess = arc_store.get(&id).await;
+        for (i, sid) in &*sids.read().unwrap() {
+            let sess = arc_store.get(&sid).await;
 
             assert_eq!(sess.is_ok(), true);
 
@@ -166,7 +172,7 @@ fn session_in_memory() {
 
             let mut count = session.get::<usize>("counter").unwrap().unwrap();
 
-            assert_eq!(count, i);
+            assert_eq!(count, *i);
 
             count += 1;
 

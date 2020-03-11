@@ -1,20 +1,22 @@
 use cookie::{Cookie, CookieJar};
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{header, Body, Client, HeaderMap, Method, Request, Response, Server, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, to_value};
-use sessions::{MemoryStore, SessionStatus, Storable};
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::sync::RwLock;
+use sessions::{MemoryStore, Session, SessionStatus, Storable};
+use std::{
+    io::Error,
+    net::SocketAddr,
+    sync::{Arc, RwLock},
+};
 use time::Duration;
 use tokio::runtime::Runtime;
+use warp::{
+    http::{header, Response},
+    hyper::{Body, Client, HeaderMap, Method, Request},
+    reject::{not_found, Reject},
+    Filter, Rejection, Reply,
+};
 
-static NOTFOUND: &[u8] = b"Not Found";
 static SESSION_NAME: &str = "session.id";
-
-type GenericError = Box<dyn std::error::Error + Send + Sync>;
-type Result<T> = std::result::Result<T, GenericError>;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct User {
@@ -22,6 +24,14 @@ struct User {
     logged_in: bool,
     count: u32,
 }
+
+#[derive(Debug)]
+struct MyError;
+
+impl Reject for MyError {}
+
+type GenericError = Box<dyn std::error::Error + Send + Sync>;
+type GenericResult<T> = std::result::Result<T, GenericError>;
 
 // From https://github.com/http-rs/tide/blob/master/src/middleware/cookies.rs
 #[derive(Debug, Clone)]
@@ -39,7 +49,7 @@ impl CookieData {
             if let Some(raw_str) = raw.to_str().ok() {
                 raw_str
                     .split(';')
-                    .try_for_each(|s| -> Result<_> {
+                    .try_for_each(|s| -> GenericResult<_> {
                         jar.add_original(Cookie::parse(s.trim().to_owned())?);
                         Ok(())
                     })
@@ -54,161 +64,7 @@ impl CookieData {
     }
 }
 
-async fn home(req: Request<Body>, store: Arc<dyn Storable>) -> Result<Response<Body>> {
-    let cookies = req
-        .extensions()
-        .get::<CookieData>()
-        .unwrap()
-        .content
-        .read()
-        .unwrap()
-        .clone();
-
-    let cookie: Option<&str> = cookies.get(SESSION_NAME).map(|c| c.value());
-
-    let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
-
-    let res = if let Some(id) = cookie {
-        let session = store.get(&id).await?;
-        if session.status()? == SessionStatus::Existed {
-            let count = session.get::<usize>("count")?.unwrap_or_else(|| 0) + 1;
-            println!("User is logged in, {}.", count);
-            session.set("count", count)?;
-            session.save().await?;
-            builder.body(Body::from(serde_json::to_vec(&session.state()?)?))
-        } else {
-            println!("User is not logged in.");
-            builder.body(Body::empty())
-        }
-    } else {
-        println!("User is not logged in.");
-        builder.body(Body::empty())
-    }
-    .unwrap();
-
-    Ok(res)
-}
-
-async fn login(req: Request<Body>, store: Arc<dyn Storable>) -> Result<Response<Body>> {
-    let cookies = req
-        .extensions()
-        .get::<CookieData>()
-        .unwrap()
-        .content
-        .read()
-        .unwrap()
-        .clone();
-
-    let cookie: Option<&str> = cookies.get(SESSION_NAME).map(|c| c.value());
-
-    let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
-
-    let session = store.get(cookie.unwrap_or_else(|| "")).await?;
-    let count = session.get::<usize>("count")?.unwrap_or_else(|| 0);
-
-    let res = if session.status()? == SessionStatus::Existed {
-        let count = count + 1;
-        println!("User is logged in, {}.", count);
-        session.set("count", count)?;
-        session.save().await?;
-        builder
-    } else {
-        let count = 0;
-        println!("User is logged in, {}.", count);
-        session.set("logged_in", true)?;
-        session.set("count", count)?;
-        session.save().await?;
-        builder.header(
-            header::SET_COOKIE,
-            Cookie::new(SESSION_NAME, session.id()?)
-                .encoded()
-                .to_string(),
-        )
-    }
-    .body(Body::from(serde_json::to_vec(&session.state()?)?))
-    .unwrap();
-
-    Ok(res)
-}
-
-async fn logout(req: Request<Body>, store: Arc<dyn Storable>) -> Result<Response<Body>> {
-    let cookies = req
-        .extensions()
-        .get::<CookieData>()
-        .unwrap()
-        .content
-        .read()
-        .unwrap()
-        .clone();
-
-    let cookie: Option<&str> = cookies.get(SESSION_NAME).map(|c| c.value());
-
-    let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
-
-    let res = if let Some(id) = cookie {
-        let session = store.get(&id).await?;
-        if session.status()? == SessionStatus::Existed {
-            let count = session.get::<usize>("count")?.unwrap_or_else(|| 0) + 1;
-            println!("User is logged in, {}", count);
-            session.set("count", count)?;
-            println!("Session is destroyed");
-            session.destroy().await?;
-            let cookie = Cookie::build(SESSION_NAME, session.id()?)
-                .max_age(Duration::seconds(-1))
-                .finish();
-            builder
-                .header(header::SET_COOKIE, cookie.encoded().to_string())
-                .body(Body::from(serde_json::to_vec(&session.state()?)?))
-        } else {
-            println!("Session is not found");
-            builder.status(403).body(Body::empty())
-        }
-    } else {
-        println!("Session is not found");
-        builder.status(403).body(Body::empty())
-    }
-    .unwrap();
-
-    Ok(res)
-}
-
-async fn response(req: Request<Body>, store: Arc<dyn Storable>) -> Result<Response<Body>> {
-    match (req.method(), req.uri().path()) {
-        (&Method::GET, "/") => home(req, store).await,
-        (&Method::POST, "/session") => login(req, store).await,
-        (&Method::POST, "/logout") => logout(req, store).await,
-        _ => {
-            // Return 404 not found response.
-            Ok(Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .body(NOTFOUND.into())
-                .unwrap())
-        }
-    }
-}
-
-async fn serve(addr: SocketAddr, store: Arc<dyn Storable>) -> Result<()> {
-    let new_service = make_service_fn(move |_| {
-        let store = store.clone();
-        async {
-            Ok::<_, GenericError>(service_fn(move |mut req| {
-                let cookie_data = CookieData::from_headers(req.headers(), http::header::COOKIE);
-                req.extensions_mut().insert(cookie_data);
-                response(req, store.clone())
-            }))
-        }
-    });
-
-    let server = Server::bind(&addr).serve(new_service);
-
-    println!("Listening on http://{}", addr);
-
-    server.await?;
-
-    Ok(())
-}
-
-async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> Result<()> {
+async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()> {
     // First visit home.
     let req = Request::builder()
         .uri(format!("http://{}/", addr))
@@ -360,22 +216,151 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> Result<()> {
     Ok(())
 }
 
+fn with_session(
+    store: Arc<dyn Storable>,
+) -> impl Filter<Extract = (Session,), Error = Rejection> + Clone {
+    warp::any()
+        .map(move || store.clone())
+        .and(warp::filters::cookie::optional(SESSION_NAME))
+        .and_then(
+            move |store: Arc<dyn Storable>, cookie: Option<String>| async move {
+                let sid = cookie
+                    .filter(|id| id.len() == 32)
+                    .unwrap_or_else(|| "".to_owned());
+                match store.get(&sid).await {
+                    Ok(session) => Ok(session),
+                    Err(err) => {
+                        dbg!(err);
+                        Err(not_found())
+                    }
+                }
+            },
+        )
+}
+
+async fn home(session: Session) -> Result<impl Reply, Rejection> {
+    async fn run(session: Session) -> Result<impl Reply, Error> {
+        let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
+
+        let mut count = session.get::<usize>("count")?.unwrap_or_else(|| 0);
+
+        Ok(if session.status()? == SessionStatus::Existed {
+            count += 1;
+            session.set("count", count)?;
+            session.save().await?;
+            println!("User is logged in, {}.", count);
+            builder.body(Body::from(serde_json::to_vec(&session.state()?)?))
+        } else {
+            println!("User is not logged in.");
+            builder.body(Body::empty())
+        }
+        .unwrap())
+    }
+
+    run(session)
+        .await
+        .map_err(|_| warp::reject::custom(MyError))
+}
+
+async fn login(session: Session) -> Result<impl Reply, Rejection> {
+    async fn run(session: Session) -> Result<impl Reply, Error> {
+        let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
+
+        let mut count = session.get::<usize>("count")?.unwrap_or_else(|| 0);
+
+        Ok(if session.status()? == SessionStatus::Existed {
+            count += 1;
+            session.set("count", count)?;
+            session.save().await?;
+            println!("User is logged in, {}.", count);
+            builder
+        } else {
+            session.set("logged_in", true)?;
+            session.set("count", count)?;
+            session.save().await?;
+            println!("User is logged in, {}.", count);
+            builder.header(
+                header::SET_COOKIE,
+                Cookie::new(SESSION_NAME, session.id()?)
+                    .encoded()
+                    .to_string(),
+            )
+        }
+        .body(Body::from(serde_json::to_vec(&session.state()?)?))
+        .unwrap())
+    }
+
+    run(session)
+        .await
+        .map_err(|_| warp::reject::custom(MyError))
+}
+
+async fn logout(session: Session) -> Result<impl Reply, Rejection> {
+    async fn run(session: Session) -> Result<impl Reply, Error> {
+        let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
+
+        let mut count = session.get::<usize>("count")?.unwrap_or_else(|| 0);
+
+        Ok(if session.status()? == SessionStatus::Existed {
+            count += 1;
+            println!("User is logged in, {}", count);
+            session.set("count", count)?;
+            println!("Session is destroyed");
+            session.destroy().await?;
+            let cookie = Cookie::build(SESSION_NAME, session.id()?)
+                .max_age(Duration::seconds(-1))
+                .finish();
+            builder
+                .header(header::SET_COOKIE, cookie.encoded().to_string())
+                .body(Body::from(serde_json::to_vec(&session.state()?)?))
+        } else {
+            println!("Session is not found");
+            builder.status(403).body(Body::empty())
+        }
+        .unwrap())
+    }
+
+    run(session)
+        .await
+        .map_err(|_| warp::reject::custom(MyError))
+}
+
 #[test]
-fn hyper_with_memory() {
+fn warp_with_memory() {
     pretty_env_logger::init();
 
     let mut rt = Runtime::new().unwrap();
 
-    let addr = "127.0.0.1:1337".parse().unwrap();
+    let addr: std::net::SocketAddr = "127.0.0.1:1337".parse().unwrap();
 
     let store = MemoryStore::new();
 
     let arc_store = Arc::new(store);
-    let store_0 = arc_store.clone();
+
     let store_1 = arc_store.clone();
 
+    // GET `/`
+    let home_route = warp::path::end()
+        .and(warp::get())
+        .and(with_session(arc_store.clone()))
+        .and_then(home);
+
+    // POST `/session`
+    let login_route = warp::path!("session")
+        .and(warp::post())
+        .and(with_session(arc_store.clone()))
+        .and_then(login);
+
+    // POST `/logout`
+    let logout_route = warp::path!("logout")
+        .and(warp::post())
+        .and(with_session(arc_store.clone()))
+        .and_then(logout);
+
+    let routes = home_route.or(login_route).or(logout_route);
+
     rt.spawn(async move {
-        let _ = serve(addr, store_0).await;
+        warp::serve(routes).run(addr).await;
     });
 
     rt.block_on(async move {

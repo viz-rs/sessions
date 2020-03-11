@@ -27,16 +27,22 @@
 
 ### Features
 
-### Stores
+- Async/await
+
+- Easy custom Store
+
+- Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on _serde_json_
+
+### Examples
 
 ```rust
 let store = Arc::new(CustomStore::new());
 
 let id = format!("id.{}", 0);                   // Generates an UID
 let store = store.clone();
-let session = store.get(&id).await.unwrap();    // Session
+let session = store.get(&id).await.unwrap();    // Fresh Session
 
-session.id();                                   // "id.0"
+session.id().unwrap();                          // ""
 session.status().unwrap();                      // SessionStatus::Created
 session.state().unwrap();                       // State
 
@@ -47,9 +53,9 @@ session.get::<u32>("number").unwrap();          // Some(233)
 
 session.save().await;                           // Ok(())
 
-let session = store.get(&id).await.unwrap();    // Session
+let session = store.get(&id).await.unwrap();    // Matches Session
 
-session.id();                                   // "id.0"
+session.id().unwrap();                          // "id.len() == 32"
 session.status().unwrap();                      // SessionStatus::Existed
 
 session.remove::<usize>("counter").unwrap();    // Some(0)
@@ -78,21 +84,16 @@ session.status().unwrap();                      // SessionStatus::Destroyed
 store.remove(&id).await;                        // Ok(())
 ```
 
-- Memory
+### Stores
 
-- Filesystem
-
-- sled
-
-- Redis
-
-- Memcached
-
-- Mongodb
-
-- PostgreSQL
-
-- MySQL/MariaDB
+- [x] Memory
+- [x] Filesystem
+- [x] Redis
+- [ ] sled
+- [ ] Memcached
+- [ ] Mongodb
+- [ ] PostgreSQL
+- [ ] MySQL/MariaDB
 
 ## License
 

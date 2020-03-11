@@ -1,12 +1,15 @@
-use async_std::{fs, task};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
 use sessions::{FilesystemStore, SessionStatus, Storable};
-use std::{env, sync::Arc};
+use std::{
+    env,
+    sync::{Arc, RwLock},
+};
+use tokio::{fs, runtime::Runtime};
 
 #[test]
-fn session_in_filesystem_with_async_std() {
+fn session_in_filesystem_with_tokio() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         name: String,
@@ -16,21 +19,26 @@ fn session_in_filesystem_with_async_std() {
     let path = env::current_dir().unwrap().join("target").join("sessions");
     let store = FilesystemStore::new(path.clone());
 
+    let sids = Arc::new(RwLock::new(Vec::new()));
+
     let arc_store = Arc::new(store);
+
+    let mut rt = Runtime::new().unwrap();
 
     let mut handlers = Vec::new();
 
     for i in 0..10 {
         let id = format!("trek-{}", i);
         let store = arc_store.clone();
+        let sids = sids.clone();
 
-        handlers.push(task::spawn(async move {
+        handlers.push(rt.spawn(async move {
             // println!(" ========> {} <=========", i);
             // let session = Session::new(&id, store);
             let session = store.get(&id).await.unwrap();
             // store.remove(&id).await;
 
-            assert_eq!(session.id(), id);
+            assert_eq!(session.id().unwrap(), "".to_owned());
             assert_eq!(session.status().unwrap(), SessionStatus::Created);
 
             assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
@@ -141,13 +149,17 @@ fn session_in_filesystem_with_async_std() {
 
             assert_eq!(session.save().await.unwrap(), ());
 
+            assert_eq!(session.id().unwrap().len(), 32);
+
+            sids.write().unwrap().push((i, session.id().unwrap()));
+
             // println!("{} ==>", i);
             // dbg!(session);
             // println!("{} <==", i);
         }));
     }
 
-    task::block_on(async {
+    rt.block_on(async {
         let _ = fs::create_dir(path.clone()).await;
 
         join_all(handlers).await;
@@ -155,9 +167,8 @@ fn session_in_filesystem_with_async_std() {
         // // dbg!(Arc::try_unwrap(arc_store).unwrap());
         // // println!("--------------------------------------");
 
-        for i in 0..10 {
-            let id = format!("trek-{}", i);
-            let sess = arc_store.get(&id).await;
+        for (i, sid) in &*sids.read().unwrap() {
+            let sess = arc_store.get(&sid).await;
 
             assert_eq!(sess.is_ok(), true);
 
@@ -167,7 +178,7 @@ fn session_in_filesystem_with_async_std() {
 
             let mut count = session.get::<usize>("counter").unwrap().unwrap();
 
-            assert_eq!(count, i);
+            assert_eq!(count, *i);
 
             count += 1;
 
@@ -183,7 +194,7 @@ fn session_in_filesystem_with_async_std() {
 
             assert_eq!(session.save().await.unwrap(), ());
 
-            let sess = arc_store.get(&id).await;
+            let sess = arc_store.get(&sid).await;
             assert_eq!(sess.is_ok(), true);
             let session = sess.unwrap();
             assert_eq!(session.status().unwrap(), SessionStatus::Existed);
