@@ -13,11 +13,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
         rust: [stable]
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379/tcp
 
     steps:
       - uses: actions/checkout@master
@@ -70,11 +65,11 @@ jobs:
           command: test
           args: --test fs-async-std --features 'fs-store async-std'
 
-      - name: redis-warp
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --test redis-warp --features 'redis-store-tokio tokio'
+      # - name: redis-warp
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: test
+      #     args: --test redis-warp --features 'redis-store-tokio tokio'
 
   check_fmt_and_docs:
     name: Checking fmt and docs
