@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/sessions/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/sessions/0.0.1")]
 #![deny(unsafe_code)]
 #![warn(
     missing_debug_implementations,
@@ -20,26 +20,20 @@
 //! for custom session backends.
 //!
 
-#[cfg(feature = "memory")]
-mod memory;
-#[cfg(feature = "memory")]
-pub use memory::MemoryStore;
+#[cfg(feature = "memory-store")]
+mod memory_store;
+#[cfg(feature = "memory-store")]
+pub use memory_store::MemoryStore;
 
-#[cfg(feature = "filesystem")]
-mod filesystem;
-#[cfg(feature = "filesystem")]
-pub use filesystem::FilesystemStore;
+#[cfg(feature = "fs-store")]
+mod fs_store;
+#[cfg(feature = "fs-store")]
+pub use fs_store::FilesystemStore;
 
-// #[cfg(feature = "cookie")]
-// mod cookie;
-
-// #[cfg(feature = "mongodb")]
-// mod mongodb;
-// #[cfg(feature = "redis")]
-// mod redis;
-
-mod options;
-pub use options::Options;
+#[cfg(feature = "redis-store")]
+mod redis_store;
+#[cfg(feature = "redis-store")]
+pub use redis_store::RedisStore;
 
 mod session;
 pub use session::{Session, SessionBeer, SessionStatus};

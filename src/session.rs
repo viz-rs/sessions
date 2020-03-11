@@ -10,6 +10,12 @@ use std::{
     sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
+// @TODO: async/await?
+// #[cfg(feature = "async-std")]
+// use async_std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+// #[cfg(feature = "tokio")]
+// use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+
 use crate::{State, Storable};
 
 /// Session stores the values.
@@ -30,8 +36,6 @@ use crate::{State, Storable};
 /// ```
 #[derive(Debug)]
 pub struct Session {
-    /// The session ID, and it shoulds be an unique ID.
-    id: String,
     /// References the store.
     store: Arc<dyn Storable>,
     /// A session beer.
@@ -43,17 +47,11 @@ pub struct Session {
 impl Session {
     /// Creates new session.
     #[inline]
-    pub fn new(id: &str, store: Arc<impl Storable>) -> Self {
+    pub fn new(store: Arc<impl Storable>) -> Self {
         Self {
             store,
-            id: id.to_owned(),
             beer: Arc::default(),
         }
-    }
-
-    /// Returns the session id.
-    pub fn id(&self) -> String {
-        self.id.clone()
     }
 
     /// References the store.
@@ -73,6 +71,17 @@ impl Session {
         self.beer
             .write()
             .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+    }
+
+    /// Gets the session id
+    pub fn id(&self) -> Result<String, Error> {
+        Ok(self.beer()?.id.clone())
+    }
+
+    /// Overrides a new id on this session
+    pub fn set_id(&self, id: String) -> Result<(), Error> {
+        self.beer_mut()?.id = id;
+        Ok(())
     }
 
     /// Gets the session status
@@ -155,15 +164,24 @@ impl Session {
 
     /// Saves this session to the store.
     pub async fn save(&self) -> Result<(), Error> {
+        let id = self.id()?;
+        if id.is_empty() {
+            // Generates a new id.
+            self.set_id(self.store.gen_sid().await?)?;
+        }
         self.store.save(self).await
     }
 
-    /// Destroys this session.
+    /// Destroys this session from store.
     ///
     /// After changes session status to [`SessionStatus::Destroyed`].
     /// So we can check the session status when want to clean client cookie.
     pub async fn destroy(&self) -> Result<(), Error> {
-        self.store.remove(&self.id).await?;
+        let id = self.id()?;
+        if !id.is_empty() {
+            self.store.remove(&id).await?;
+        }
+        self.clear()?;
         self.set_status(SessionStatus::Destroyed)?;
         Ok(())
     }
@@ -191,6 +209,8 @@ impl Default for SessionStatus {
 /// A Session Beer
 #[derive(Debug, Clone, Default)]
 pub struct SessionBeer {
+    /// The session ID, and it shoulds be an unique ID.
+    pub id: String,
     /// Stores the values.
     pub state: State,
     /// Stores the status.
