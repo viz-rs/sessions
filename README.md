@@ -1,7 +1,6 @@
 <h1 align="center">Sessions</h1>
 <div align="center">
-  <p><strong>Sessions module for web services.</strong></p>
-  <p>Sessions provides memory and filesystem sessions and infrastructure for custom session backends.</p>
+  <p><strong>General sessions module for web services.</strong></p>
 </div>
 
 <br />
