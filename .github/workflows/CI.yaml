@@ -45,7 +45,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test memory-warp-hyper --features 'memory-store tokio'
+          args: --test memory-warp-hyper --features 'memory-store tokio cookie'
 
       - name: fs-tokio
         uses: actions-rs/cargo@v1

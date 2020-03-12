@@ -13,7 +13,7 @@ license = "MIT/Apache-2.0"
 async-trait = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-cookie = { version = "0.13", features = ["secure", "percent-encode"] }
+cookie = { version = "0.13", features = ["secure", "percent-encode"], optional = true }
 nanoid = { version = "0.3", optional = true }
 tokio = { version = "0.2", default-features = false,  features = ["fs", "sync"], optional = true }
 async-std = { version = "1.5", optional = true }
@@ -46,7 +46,7 @@ required-features = ["memory-store"]
 
 [[test]]
 name = "memory-warp-hyper"
-required-features = ["memory-store", "tokio"]
+required-features = ["memory-store", "tokio", "cookie"]
 
 [[test]]
 name = "fs-tokio"
