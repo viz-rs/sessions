@@ -1,7 +1,7 @@
 <h1 align="center">Sessions</h1>
 <div align="center">
-  <p><strong>Sessions for web services.</strong></p>
-  <p>Sessions provides memory and filesystem sessions and infrastructure for custom session backends.</p></p></p></p>
+  <p><strong>Sessions module for web services.</strong></p>
+  <p>Sessions provides memory and filesystem sessions and infrastructure for custom session backends.</p>
 </div>
 
 <br />
@@ -28,7 +28,7 @@
 
 - Async/await
 
-- Easy custom Store
+- Easy custom Stores
 
 - Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on _serde_json_
 
