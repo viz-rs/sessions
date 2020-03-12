@@ -3,13 +3,40 @@ use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
 use sessions::{FilesystemStore, SessionStatus, Storable};
+use std::future::Future;
 use std::{
     env,
     sync::{Arc, RwLock},
 };
 
+struct Runtime {
+    count: usize,
+}
+
+impl Runtime {
+    fn new() -> std::io::Result<Self> {
+        Ok(Self { count: 0 })
+    }
+
+    fn spawn<F, T>(&self, future: F) -> task::JoinHandle<T>
+    where
+        F: Future<Output = T> + Send + 'static,
+        T: Send + 'static,
+    {
+        task::spawn(future)
+    }
+
+    fn block_on<F, T>(&mut self, future: F) -> T
+    where
+        F: Future<Output = T>,
+    {
+        self.count += 1;
+        task::block_on(future)
+    }
+}
+
 #[test]
-fn session_in_filesystem_with_async_std() {
+fn session_in_filesystem() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         name: String,
@@ -23,6 +50,8 @@ fn session_in_filesystem_with_async_std() {
 
     let arc_store = Arc::new(store);
 
+    let mut rt = Runtime::new().unwrap();
+
     let mut handlers = Vec::new();
 
     for i in 0..10 {
@@ -30,7 +59,7 @@ fn session_in_filesystem_with_async_std() {
         let store = arc_store.clone();
         let sids = sids.clone();
 
-        handlers.push(task::spawn(async move {
+        handlers.push(rt.spawn(async move {
             // println!(" ========> {} <=========", i);
             // let session = Session::new(&id, store);
             let session = store.get(&id).await.unwrap();
@@ -157,7 +186,7 @@ fn session_in_filesystem_with_async_std() {
         }));
     }
 
-    task::block_on(async {
+    rt.block_on(async {
         let _ = fs::create_dir(path.clone()).await;
 
         join_all(handlers).await;

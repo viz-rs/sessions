@@ -6,10 +6,11 @@ use std::{
     env,
     sync::{Arc, RwLock},
 };
+
 use tokio::{fs, runtime::Runtime};
 
 #[test]
-fn session_in_filesystem_with_tokio() {
+fn session_in_filesystem() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         name: String,

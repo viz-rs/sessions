@@ -29,6 +29,7 @@ bytes = "0.5"
 warp = "0.2"
 pretty_env_logger = "0.4"
 time = "0.2"
+log = "0.4"
 
 [features]
 default = ["nanoid"]
@@ -44,11 +45,7 @@ name = "memory"
 required-features = ["memory-store"]
 
 [[test]]
-name = "memory-hyper"
-required-features = ["memory-store", "tokio"]
-
-[[test]]
-name = "memory-warp"
+name = "memory-warp-hyper"
 required-features = ["memory-store", "tokio"]
 
 [[test]]
