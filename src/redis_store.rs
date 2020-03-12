@@ -22,7 +22,7 @@ pub struct RedisStore {
 }
 
 impl RedisStore {
-    /// Creates new Memory Store.
+    /// Creates new Redis Store.
     #[inline]
     pub fn new(client: Client, prefix: &str, max_age: usize) -> Self {
         Self {

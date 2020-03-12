@@ -5,7 +5,6 @@
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{from_value, to_value};
 use std::{
-    error::Error as ErrorExt,
     io::{Error, ErrorKind},
     sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
@@ -48,14 +47,14 @@ impl Session {
     pub fn beer(&self) -> Result<RwLockReadGuard<'_, SessionBeer>, Error> {
         self.beer
             .read()
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
     }
 
     /// Writes the session beer.
     pub fn beer_mut(&self) -> Result<RwLockWriteGuard<'_, SessionBeer>, Error> {
         self.beer
             .write()
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
     }
 
     /// Gets the session id

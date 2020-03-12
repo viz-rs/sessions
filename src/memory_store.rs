@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use std::{
     collections::HashMap,
-    error::Error as ErrorExt,
     fmt,
     io::{Error, ErrorKind},
     sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
@@ -31,18 +30,14 @@ impl MemoryStore {
     fn store(&self) -> Result<RwLockReadGuard<'_, Map>, Error> {
         self.inner
             .read()
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
     }
 
     fn store_mut(&self) -> Result<RwLockWriteGuard<'_, Map>, Error> {
         self.inner
             .write()
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
     }
-
-    // async fn gen_sid(&self) -> Result<String, Error> {
-    //     Ok("231".to_owned())
-    // }
 }
 
 #[async_trait]

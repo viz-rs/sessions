@@ -12,7 +12,7 @@ pub trait Storable: Send + Sync + 'static {
     /// Or returns a new session when not found.
     async fn get(&self, sid: &str) -> Result<Session, Error>;
 
-    /// Removes a session by the id.
+    /// Removes a session by the sid.
     async fn remove(&self, sid: &str) -> Result<(), Error>;
 
     /// Saves a session.
