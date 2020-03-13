@@ -20,6 +20,16 @@ pub struct RedisStore {
     client: Client,
 }
 
+impl Default for RedisStore {
+    fn default() -> Self {
+        Self {
+            prefix: "session:id".to_owned(),
+            max_age: 60 * 60 * 24 * 7 * 2, // Two weeks
+            client: Client::open("redis://127.0.0.1/").unwrap(),
+        }
+    }
+}
+
 impl RedisStore {
     /// Creates new Redis Store.
     #[inline]

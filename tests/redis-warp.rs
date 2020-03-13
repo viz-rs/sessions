@@ -184,10 +184,7 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()
     let res = Client::new().request(req).await?;
     assert_eq!(res.status(), 200);
     let buf = hyper::body::to_bytes(res).await?;
-    assert!(!buf.is_empty());
-    let user = from_slice::<User>(&buf)?;
-    assert_eq!(true, user.logged_in);
-    assert_eq!(3, user.count);
+    assert_eq!(String::from_utf8(buf.to_vec())?, "{}");
 
     let session = store.get(id.unwrap()).await;
     assert_eq!(session.status().await, SessionStatus::Created);
@@ -282,11 +279,11 @@ async fn logout(session: Session) -> Result<Response<Body>, Error> {
 
     Ok(if session.status().await == SessionStatus::Existed {
         let count = session.get::<usize>("count").await.unwrap_or_else(|| 0) + 1;
-        info!("User is logged in, {}", count);
+        info!("User is logged in, {}.", count);
         session.set("logged_in", false).await;
         session.set("count", count).await;
         session.destroy().await;
-        info!("Session is destroyed");
+        info!("Session is destroyed.");
         let cookie = Cookie::build(SESSION_NAME, session.id().await)
             .max_age(Duration::seconds(-1))
             .finish();
@@ -294,7 +291,7 @@ async fn logout(session: Session) -> Result<Response<Body>, Error> {
             .header(header::SET_COOKIE, cookie.encoded().to_string())
             .body(Body::from(serde_json::to_vec(&session.state().await)?))
     } else {
-        info!("Session is not found");
+        info!("Session is not found.");
         builder.status(403).body(Body::empty())
     }
     .unwrap())

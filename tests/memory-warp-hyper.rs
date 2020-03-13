@@ -187,10 +187,7 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()
     let res = Client::new().request(req).await?;
     assert_eq!(res.status(), 200);
     let buf = hyper::body::to_bytes(res).await?;
-    assert!(!buf.is_empty());
-    let user = from_slice::<User>(&buf)?;
-    assert_eq!(true, user.logged_in);
-    assert_eq!(3, user.count);
+    assert_eq!(String::from_utf8(buf.to_vec())?, "{}");
 
     let session = store.get(id.unwrap()).await;
     assert_eq!(session.status().await, SessionStatus::Created);

@@ -64,6 +64,11 @@ jobs:
       #   with:
       #     command: test
       #     args: --test redis-warp --features 'redis-store-tokio tokio'
+      # - name: redis-tide
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: test
+      #     args: --test redis-tide --no-default-features --features 'nanoid redis-store-async-std async-std cookie'
 
   check_fmt_and_docs:
     name: Checking fmt and docs
