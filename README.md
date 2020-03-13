@@ -30,7 +30,7 @@
 
 - Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on **serde_json**.
 
-- Uses the [`nanoid`](https://docs.rs/nanoid) for generating `sid / UID`.
+- Uses the [`nanoid!(32)`](https://docs.rs/nanoid) for generating `sid / UID`.
 
 - Easy custom Stores.
 
