@@ -39,13 +39,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test memory --features 'memory-store tokio'
+          args: --test memory --features 'memory-store'
 
       - name: memory-warp-hyper
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test memory-warp-hyper --features 'memory-store tokio cookie'
+          args: --test memory-warp-hyper --features 'memory-store'
 
       - name: fs-tokio
         uses: actions-rs/cargo@v1
@@ -57,7 +57,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test fs-async-std --no-default-features --features 'fs-store async-std'
+          args: --test fs-async-std --no-default-features --features 'nanoid fs-store async-std'
 
       # - name: redis-warp
       #   uses: actions-rs/cargo@v1
