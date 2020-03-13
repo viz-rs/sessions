@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 use serde_json::{from_slice, to_vec};
-use std::{fmt, io::Error, path::PathBuf, sync::Arc};
+use std::{fmt, path::PathBuf, sync::Arc};
 
-#[cfg(feature = "async-std")]
+#[cfg(all(not(feature = "tokio"), feature = "async-std"))]
 use async_std::fs;
-#[cfg(feature = "tokio")]
+#[cfg(all(feature = "tokio", not(feature = "async-std")))]
 use tokio::fs;
 
 use crate::{Session, SessionBeer, SessionStatus, Storable};
@@ -27,36 +27,47 @@ impl FilesystemStore {
 
 #[async_trait]
 impl Storable for FilesystemStore {
-    async fn get(&self, sid: &str) -> Result<Session, Error> {
+    async fn get(&self, sid: &str) -> Session {
         let session = Session::new(Arc::new(self.clone()));
 
-        if !self.verify_sid(sid).await? {
-            return Ok(session);
+        if !self.verify_sid(sid).await {
+            return session;
         }
 
         let file = fs::read(self.path.join(sid)).await;
-        let exists = file.is_ok();
 
-        if exists {
-            let SessionBeer { id, state, status } = &mut *session.beer_mut()?;
-            let data = file?;
+        if file.is_ok() {
+            let raw = file.unwrap();
+
             // Should be a map `{}`
-            if data.len() > 1 {
-                *state = from_slice(&data)?;
+            if raw.len() < 2 {
+                return session;
             }
-            *status = SessionStatus::Existed;
-            *id = sid.to_owned();
+
+            let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
+
+            if let Ok(data) = from_slice(&raw) {
+                *state = data;
+                *status = SessionStatus::Existed;
+                *id = sid.to_owned();
+            }
         }
 
-        Ok(session)
+        session
     }
 
-    async fn remove(&self, sid: &str) -> Result<(), Error> {
-        fs::remove_file(self.path.join(sid)).await
+    async fn remove(&self, sid: &str) -> bool {
+        fs::remove_file(self.path.join(sid)).await.is_ok()
     }
 
-    async fn save(&self, session: &Session) -> Result<(), Error> {
-        fs::write(self.path.join(session.id()?), to_vec(&session.state()?)?).await
+    async fn save(&self, session: &Session) -> bool {
+        if let Ok(data) = to_vec(&session.state().await) {
+            fs::write(self.path.join(session.id().await), data)
+                .await
+                .is_ok()
+        } else {
+            false
+        }
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

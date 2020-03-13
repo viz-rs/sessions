@@ -25,39 +25,42 @@
 
 ### Features
 
-- Async/await
+- Async/await, supports [`tokio`](https://tokio.rs) and [`async-std`](https://async.rs/).
+  **tokio** is by default.
 
-- Easy custom Stores
+- Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on **serde_json**.
 
-- Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on _serde_json_
+- Uses the [`nanoid`](https://docs.rs/nanoid) for generating `sid / UID`.
+
+- Easy custom Stores.
 
 ### Examples
 
 ```rust
 let store = Arc::new(CustomStore::new());
 
-let id = format!("id.{}", 0);                   // Generates an UID
+let id = "it is an unique ID.";                 // Generates an UID
 let store = store.clone();
-let session = store.get(&id).await.unwrap();    // Fresh Session
+let session = store.get(&id).await;             // Fresh Session
 
-session.id().unwrap();                          // ""
-session.status().unwrap();                      // SessionStatus::Created
-session.state().unwrap();                       // State
+session.id().await;                             // ""
+session.status().await;                         // SessionStatus::Created
+session.state().await;                          // State
 
-session.set::<usize>("counter", 0).unwrap();    // None
-session.set("number", 233).unwrap();            // None
-session.get::<usize>("counter").unwrap();       // Some(0)
-session.get::<u32>("number").unwrap();          // Some(233)
+session.set::<usize>("counter", 0).await;       // None
+session.set("number", 233).await;               // None
+session.get::<usize>("counter").await;          // Some(0)
+session.get::<u32>("number").await;             // Some(233)
 
-session.save().await;                           // Ok(())
+session.save().await;                           // bool
 
-let session = store.get(&id).await.unwrap();    // Matches Session
+let session = store.get(&id).await;             // Matches Session
 
-session.id().unwrap();                          // "id.len() == 32"
-session.status().unwrap();                      // SessionStatus::Existed
+session.id().await;                             // "id.len() == 32"
+session.status().await;                         // SessionStatus::Existed
 
-session.remove::<usize>("counter").unwrap();    // Some(0)
-session.remove::<u32>("number").unwrap();       // Some(233)
+session.remove::<usize>("counter").await;       // Some(0)
+session.remove::<u32>("number").await;          // Some(233)
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct User {
@@ -65,21 +68,21 @@ struct User {
     no: u32,
 }
 
-session.remove::<User>("user").is_ok();         // true
+session.remove::<User>("user").await.is_some(); // true
 
 session.set("user", User {
     name: "Yao Ming",
     no: 11,
-}).unwrap();                                    // None
+}).await;                                       // None
 
-session.get::<User>("user").unwrap();           // Option<User>
+session.get::<User>("user").await;              // Option<User>
 
-session.destroy().await;                        // Ok(())
+session.destroy().await;                        // bool
 
-session.status().unwrap();                      // SessionStatus::Destroyed
+session.status().await;                         // SessionStatus::Destroyed
 // or
 
-store.remove(&id).await;                        // Ok(())
+store.remove(&id).await;                        // bool
 ```
 
 ### Stores

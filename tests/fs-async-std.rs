@@ -62,16 +62,16 @@ fn session_in_filesystem() {
         handlers.push(rt.spawn(async move {
             // println!(" ========> {} <=========", i);
             // let session = Session::new(&id, store);
-            let session = store.get(&id).await.unwrap();
+            let session = store.get(&id).await;
             // store.remove(&id).await;
 
-            assert_eq!(session.id().unwrap(), "".to_owned());
-            assert_eq!(session.status().unwrap(), SessionStatus::Created);
+            assert_eq!(session.id().await, "".to_owned());
+            assert_eq!(session.status().await, SessionStatus::Created);
 
-            assert_eq!(session.set::<usize>("counter", i).unwrap(), None);
-            assert_eq!(session.set("number", 233).unwrap(), None);
-            assert_eq!(session.get::<usize>("counter").unwrap(), Some(i));
-            assert_eq!(session.get::<u32>("number").unwrap(), Some(233));
+            assert_eq!(session.set::<usize>("counter", i).await, None);
+            assert_eq!(session.set("number", 233).await, None);
+            assert_eq!(session.get::<usize>("counter").await, Some(i));
+            assert_eq!(session.get::<u32>("number").await, Some(233));
             assert_eq!(
                 session
                     .set(
@@ -81,7 +81,7 @@ fn session_in_filesystem() {
                             no: 23,
                         }
                     )
-                    .unwrap(),
+                    .await,
                 None
             );
             assert_eq!(
@@ -93,13 +93,13 @@ fn session_in_filesystem() {
                             no: 24,
                         }
                     )
-                    .unwrap(),
+                    .await,
                 Some(User {
                     name: "Jordan".to_owned(),
                     no: 23,
                 })
             );
-            let user: Option<User> = session.get::<User>("user").unwrap();
+            let user: Option<User> = session.get::<User>("user").await;
             assert_eq!(
                 user,
                 Some(User {
@@ -118,7 +118,7 @@ fn session_in_filesystem() {
                     no: 24,
                 }),
             );
-            assert_eq!(session.state().unwrap().clone(), state);
+            assert_eq!(session.state().await, state);
             assert_eq!(
                 serde_json::to_string(&state).unwrap(),
                 format!(
@@ -127,58 +127,54 @@ fn session_in_filesystem() {
                 )
             );
             assert_eq!(
-                serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
+                serde_json::to_string(&session.state().await).unwrap(),
                 format!(
                     r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                     i
                 )
             );
 
-            assert_eq!(session.remove("number").unwrap(), Some(json!(233)));
-            assert_eq!(session.remove::<f32>("counter").unwrap(), Some(i as f32));
-            assert_eq!(session.get::<u32>("counter").unwrap(), None);
-            assert_eq!(session.remove::<usize>("counter").unwrap(), None);
+            assert_eq!(session.remove("number").await, Some(json!(233)));
+            assert_eq!(session.remove::<f32>("counter").await, Some(i as f32));
+            assert_eq!(session.get::<u32>("counter").await, None);
+            assert_eq!(session.remove::<usize>("counter").await, None);
 
             state.remove("number");
             state.remove("counter");
-            assert_eq!(session.state().unwrap().clone(), state);
+            assert_eq!(session.state().await, state);
 
-            assert_eq!(session.clear().unwrap(), ());
-            assert_eq!(session.state().unwrap().clone(), Map::new());
+            assert_eq!(session.clear().await, ());
+            assert_eq!(session.state().await, Map::new());
 
             state.clear();
-            assert_eq!(session.state().unwrap().clone(), state);
-            assert_eq!(
-                serde_json::to_string(&session.state().unwrap().clone()).unwrap(),
-                "{}"
-            );
+            assert_eq!(session.state().await, state);
+            assert_eq!(serde_json::to_string(&session.state().await).unwrap(), "{}");
 
-            // *session.state_mut().unwrap() = serde_json::from_str(&format!(
-            //     r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
-            //     i
-            // ))
-            // .unwrap();
-            let _ = session.set_state(
-                serde_json::from_str(&format!(
+            session
+                .set_state(
+                    serde_json::from_str(&format!(
             // *session.state_mut().unwrap() = serde_json::from_str(&format!(
                 r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                 i
             ))
-                .unwrap(),
-            );
+                    .unwrap(),
+                )
+                .await;
+
             assert_eq!(
-                to_string(&session.state().unwrap().clone()).unwrap(),
+                to_string(&session.state().await).unwrap(),
                 format!(
                     r#"{{"counter":{},"number":233,"user":{{"name":"Kobe","no":24}}}}"#,
                     i
                 )
             );
 
-            assert_eq!(session.save().await.unwrap(), ());
+            assert_eq!(session.save().await, true);
 
-            assert_eq!(session.id().unwrap().len(), 32);
+            assert_eq!(session.id().await.len(), 32);
 
-            sids.write().unwrap().push((i, session.id().unwrap()));
+            let id = session.id().await;
+            sids.write().unwrap().push((i, id));
 
             // println!("{} ==>", i);
             // dbg!(session);
@@ -195,44 +191,38 @@ fn session_in_filesystem() {
         // // println!("--------------------------------------");
 
         for (i, sid) in &*sids.read().unwrap() {
-            let sess = arc_store.get(&sid).await;
+            let session = arc_store.get(&sid).await;
 
-            assert_eq!(sess.is_ok(), true);
+            assert_eq!(session.status().await, SessionStatus::Existed);
 
-            let session = sess.unwrap();
-
-            assert_eq!(session.status().unwrap(), SessionStatus::Existed);
-
-            let mut count = session.get::<usize>("counter").unwrap().unwrap();
+            let mut count = session.get::<usize>("counter").await.unwrap();
 
             assert_eq!(count, *i);
 
             count += 1;
 
-            assert_eq!(session.set("index", count).unwrap(), None);
+            assert_eq!(session.set("index", count).await, None);
 
-            assert_eq!(session.remove::<User>("user").is_ok(), true);
-            assert_eq!(session.remove::<i32>("number").unwrap(), Some(233));
+            assert_eq!(session.remove::<User>("user").await.is_some(), true);
+            assert_eq!(session.remove::<i32>("number").await, Some(233));
 
             assert_eq!(
-                to_string(&session.state().unwrap().clone()).unwrap(),
+                to_string(&session.state().await).unwrap(),
                 format!(r#"{{"counter":{},"index":{}}}"#, count - 1, count)
             );
 
-            assert_eq!(session.save().await.unwrap(), ());
+            assert_eq!(session.save().await, true);
 
-            let sess = arc_store.get(&sid).await;
-            assert_eq!(sess.is_ok(), true);
-            let session = sess.unwrap();
-            assert_eq!(session.status().unwrap(), SessionStatus::Existed);
+            let session = arc_store.get(&sid).await;
+            assert_eq!(session.status().await, SessionStatus::Existed);
             assert_eq!(
-                to_string(&session.state().unwrap().clone()).unwrap(),
+                to_string(&session.state().await).unwrap(),
                 format!(r#"{{"counter":{},"index":{}}}"#, count - 1, count)
             );
 
-            let _ = session.destroy().await;
+            assert_eq!(session.destroy().await, true);
 
-            assert_eq!(session.status().unwrap(), SessionStatus::Destroyed);
+            assert_eq!(session.status().await, SessionStatus::Destroyed);
         }
 
         // dbg!(Arc::try_unwrap(arc_store).unwrap());

@@ -4,18 +4,9 @@
 
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{from_value, to_value};
-use std::{
-    io::{Error, ErrorKind},
-    sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
-};
+use std::sync::Arc;
 
-// @TODO: async/await?
-// #[cfg(feature = "async-std")]
-// use async_std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-// #[cfg(feature = "tokio")]
-// use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-
-use crate::{State, Storable};
+use crate::{RwLock, RwLockReadGuard, RwLockWriteGuard, State, Storable};
 
 /// Session stores the values.
 #[derive(Debug)]
@@ -44,59 +35,52 @@ impl Session {
     }
 
     /// Reads the session beer.
-    pub fn beer(&self) -> Result<RwLockReadGuard<'_, SessionBeer>, Error> {
-        self.beer
-            .read()
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+    pub async fn beer(&self) -> RwLockReadGuard<'_, SessionBeer> {
+        self.beer.read().await
     }
 
     /// Writes the session beer.
-    pub fn beer_mut(&self) -> Result<RwLockWriteGuard<'_, SessionBeer>, Error> {
-        self.beer
-            .write()
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+    pub async fn beer_mut(&self) -> RwLockWriteGuard<'_, SessionBeer> {
+        self.beer.write().await
     }
 
     /// Gets the session id
-    pub fn id(&self) -> Result<String, Error> {
-        Ok(self.beer()?.id.clone())
+    pub async fn id(&self) -> String {
+        self.beer().await.id.clone()
     }
 
     /// Overrides a new id on this session
-    pub fn set_id(&self, id: String) -> Result<(), Error> {
-        self.beer_mut()?.id = id;
-        Ok(())
+    pub async fn set_id(&self, id: String) {
+        self.beer_mut().await.id = id;
     }
 
     /// Gets the session status
-    pub fn status(&self) -> Result<SessionStatus, Error> {
-        Ok(self.beer()?.status.clone())
+    pub async fn status(&self) -> SessionStatus {
+        self.beer().await.status.clone()
     }
 
     /// Overrides a new status on this session
-    pub fn set_status(&self, status: SessionStatus) -> Result<(), Error> {
-        self.beer_mut()?.status = status;
-        Ok(())
+    pub async fn set_status(&self, status: SessionStatus) {
+        self.beer_mut().await.status = status;
     }
 
     /// Gets the session state
-    pub fn state(&self) -> Result<State, Error> {
-        Ok(self.beer()?.state.clone())
+    pub async fn state(&self) -> State {
+        self.beer().await.state.clone()
     }
 
     /// Overrides a new state on this session
-    pub fn set_state(&self, state: State) -> Result<(), Error> {
-        self.beer_mut()?.state = state;
-        Ok(())
+    pub async fn set_state(&self, state: State) {
+        self.beer_mut().await.state = state;
     }
 
     /// Gets a reference to the value corresponding to the key.
-    pub fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
-        Ok(if let Some(val) = self.beer()?.state.get(key).cloned() {
-            from_value(val)?
+    pub async fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
+        if let Some(val) = self.beer().await.state.get(key).cloned() {
+            from_value(val).ok()
         } else {
             None
-        })
+        }
     }
 
     /// Sets a key-value pair into the state.
@@ -105,53 +89,48 @@ impl Session {
     ///
     /// If the state did have this key present, the value is updated, and the old
     /// value is returned.
-    pub fn set<T: DeserializeOwned + Serialize>(
-        &self,
-        key: &str,
-        val: T,
-    ) -> Result<Option<T>, Error> {
+    pub async fn set<T: DeserializeOwned + Serialize>(&self, key: &str, val: T) -> Option<T> {
         // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
-        Ok(
-            if let Some(prev) = self
-                .beer_mut()?
-                .state
-                .insert(key.to_owned(), to_value(val)?)
-            {
-                // if *status != SessionStatus::Changed {
-                //     *status = SessionStatus::Changed;
-                // }
-                from_value(prev)?
-            } else {
-                None
-            },
-        )
+        if let Some(prev) = self
+            .beer_mut()
+            .await
+            .state
+            .insert(key.to_owned(), to_value(val).ok()?)
+        {
+            // if *status != SessionStatus::Changed {
+            //     *status = SessionStatus::Changed;
+            // }
+            from_value(prev).ok()
+        } else {
+            None
+        }
     }
 
     /// Removes a key from the state, returning the value at the key if the key
     /// was previously in the state.
-    pub fn remove<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Error> {
+    pub async fn remove<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
         // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
-        Ok(if let Some(val) = self.beer_mut()?.state.remove(key) {
+        if let Some(val) = self.beer_mut().await.state.remove(key) {
             // if *status != SessionStatus::Changed {
             //     *status = SessionStatus::Changed;
             // }
-            from_value(val)?
+            from_value(val).ok()
         } else {
             None
-        })
+        }
     }
 
     /// Clears the state of this session.
-    pub fn clear(&self) -> Result<(), Error> {
-        Ok(self.beer_mut()?.state.clear())
+    pub async fn clear(&self) {
+        self.beer_mut().await.state.clear();
     }
 
     /// Saves this session to the store.
-    pub async fn save(&self) -> Result<(), Error> {
-        let id = self.id()?;
+    pub async fn save(&self) -> bool {
+        let id = self.id().await;
         if id.is_empty() {
             // Generates a new id.
-            self.set_id(self.store.gen_sid().await?)?;
+            self.set_id(self.store.gen_sid().await).await;
         }
         self.store.save(self).await
     }
@@ -160,14 +139,14 @@ impl Session {
     ///
     /// After changes session status to [`SessionStatus::Destroyed`].
     /// So we can check the session status when want to clean client cookie.
-    pub async fn destroy(&self) -> Result<(), Error> {
-        let id = self.id()?;
-        if !id.is_empty() {
-            self.store.remove(&id).await?;
+    pub async fn destroy(&self) -> bool {
+        self.clear().await;
+        self.set_status(SessionStatus::Destroyed).await;
+        let id = self.id().await;
+        if id.is_empty() {
+            return true;
         }
-        self.clear()?;
-        self.set_status(SessionStatus::Destroyed)?;
-        Ok(())
+        self.store.remove(&id).await
     }
 }
 

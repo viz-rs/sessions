@@ -3,7 +3,6 @@ use redis::{aio::Connection, AsyncCommands, Client};
 use serde_json::{from_slice, to_vec};
 
 use std::{
-    error::Error as ErrorExt,
     fmt,
     io::{Error, ErrorKind},
     sync::Arc,
@@ -47,69 +46,83 @@ impl RedisStore {
         self.client
             .get_async_connection()
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
     }
 }
 
 #[async_trait]
 impl Storable for RedisStore {
-    async fn get(&self, sid: &str) -> Result<Session, Error> {
+    async fn get(&self, sid: &str) -> Session {
         let session = Session::new(Arc::new(self.clone()));
 
-        if !self.verify_sid(sid).await? {
-            return Ok(session);
+        if !self.verify_sid(sid).await {
+            return session;
         }
 
-        let exists = self
-            .store()
-            .await?
-            .exists(self.prefix() + sid)
-            .await
-            .unwrap_or_else(|_| false);
+        let store = self.store().await;
 
-        if exists {
-            let data = self
-                .store()
-                .await?
-                .get::<String, Vec<u8>>(self.prefix() + sid)
+        if store.is_err() {
+            return session;
+        }
+
+        if let Ok(mut store) = store {
+            if store
+                .exists(self.prefix() + sid)
                 .await
-                .map_err(|e| Error::new(ErrorKind::Other, e.description()))?;
+                .unwrap_or_else(|_| false)
+            {
+                if let Ok(raw) = store.get::<String, Vec<u8>>(self.prefix() + sid).await {
+                    if let Ok(data) = from_slice(&raw) {
+                        let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
 
-            let SessionBeer { id, state, status } = &mut *session.beer_mut()?;
-
-            *state = from_slice(&data)?;
-            *status = SessionStatus::Existed;
-            *id = sid.to_owned();
+                        *state = data;
+                        *status = SessionStatus::Existed;
+                        *id = sid.to_owned();
+                    }
+                }
+            }
         }
 
-        Ok(session)
+        session
     }
 
-    async fn remove(&self, sid: &str) -> Result<(), Error> {
-        self.store()
-            .await?
-            .del::<String, ()>(self.prefix() + sid)
+    async fn remove(&self, sid: &str) -> bool {
+        let store = self.store().await;
+
+        if store.is_err() {
+            return false;
+        }
+
+        store
+            .unwrap()
+            .del::<String, bool>(self.prefix() + sid)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+            .unwrap_or_else(|_| false)
     }
 
-    async fn save(&self, session: &Session) -> Result<(), Error> {
-        let max_age = self.max_age();
-        let mut store = self.store().await?;
-        let res = if max_age > 0 {
-            store.set_ex::<String, Vec<u8>, ()>(
-                self.prefix() + &session.id()?,
-                to_vec(&session.state()?)?,
-                max_age,
-            )
+    async fn save(&self, session: &Session) -> bool {
+        let store = self.store().await;
+
+        if store.is_err() {
+            return false;
+        }
+
+        let mut store = store.unwrap();
+
+        if let Ok(data) = to_vec(&session.state().await) {
+            let max_age = self.max_age();
+            let id = session.id().await;
+
+            if max_age > 0 {
+                store.set_ex::<String, Vec<u8>, bool>(self.prefix() + &id, data, max_age)
+            } else {
+                store.set::<String, Vec<u8>, bool>(self.prefix() + &id, data)
+            }
+            .await
+            .unwrap_or_else(|_| false)
         } else {
-            store.set::<String, Vec<u8>, ()>(
-                self.prefix() + &session.id()?,
-                to_vec(&session.state()?)?,
-            )
-        };
-        res.await
-            .map_err(|e| Error::new(ErrorKind::Other, e.description()))
+            false
+        }
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

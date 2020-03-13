@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use std::{fmt, io::Error};
+use std::fmt;
 
 use crate::Session;
 
@@ -10,32 +10,32 @@ use crate::Session;
 pub trait Storable: Send + Sync + 'static {
     /// Gets a session by the sid.
     /// Or returns a new session when not found.
-    async fn get(&self, sid: &str) -> Result<Session, Error>;
+    async fn get(&self, sid: &str) -> Session;
 
     /// Removes a session by the sid.
-    async fn remove(&self, sid: &str) -> Result<(), Error>;
+    async fn remove(&self, sid: &str) -> bool;
 
     /// Saves a session.
-    async fn save(&self, session: &Session) -> Result<(), Error>;
+    async fn save(&self, session: &Session) -> bool;
 
     #[cfg(not(feature = "nanoid"))]
     /// Generates a sid/UID fro a session.
-    async fn gen_sid(&self) -> Result<String, Error>;
+    async fn gen_sid(&self) -> String;
     #[cfg(feature = "nanoid")]
     /// Generates a sid/UID fro a session by nanoid.
-    async fn gen_sid(&self) -> Result<String, Error> {
-        Ok(nanoid::nanoid!(32))
+    async fn gen_sid(&self) -> String {
+        nanoid::nanoid!(32)
     }
 
     #[cfg(not(feature = "nanoid"))]
     /// Verifies a sid/UID.
-    async fn verify_sid(&self, sid: &str) -> Result<bool, Error> {
-        Ok(sid.len() > 0)
+    async fn verify_sid(&self, sid: &str) -> bool {
+        sid.len() > 0
     }
     #[cfg(feature = "nanoid")]
     /// Verifies a sid/UID.
-    async fn verify_sid(&self, sid: &str) -> Result<bool, Error> {
-        Ok(sid.len() == 32)
+    async fn verify_sid(&self, sid: &str) -> bool {
+        sid.len() == 32
     }
 
     /// @TODO: encode & decode the state

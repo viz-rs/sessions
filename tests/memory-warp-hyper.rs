@@ -18,7 +18,7 @@ use warp::{
         service::{make_service_fn, service_fn},
         Body, Client, HeaderMap, Method, Request,
     },
-    reject::{not_found, Reject},
+    reject::Reject,
     Filter, Rejection, Reply,
 };
 
@@ -26,7 +26,6 @@ static SESSION_NAME: &str = "session.id";
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct User {
-    id: String,
     logged_in: bool,
     count: u32,
 }
@@ -95,14 +94,14 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()
     let buf = hyper::body::to_bytes(res).await?;
     assert!(!buf.is_empty());
     let user = from_slice::<User>(&buf)?;
-    assert_eq!(id, Some(user.id.as_str()));
+    assert_eq!(true, user.logged_in);
     assert_eq!(0, user.count);
 
-    let session = store.get(id.unwrap()).await?;
-    assert_eq!(session.status()?, SessionStatus::Created);
+    let session = store.get(id.unwrap()).await;
+    assert_eq!(session.status().await, SessionStatus::Existed);
     assert_eq!(
         to_value(user)?.as_object().map(|m| m.to_owned()).unwrap(),
-        session.state()?
+        session.state().await
     );
 
     // Second Login.
@@ -127,14 +126,14 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()
     let buf = hyper::body::to_bytes(res).await?;
     assert!(!buf.is_empty());
     let user = from_slice::<User>(&buf)?;
-    assert_eq!(id, Some(user.id.as_str()));
+    assert_eq!(true, user.logged_in);
     assert_eq!(1, user.count);
 
-    let session = store.get(id.unwrap()).await?;
-    assert_eq!(session.status()?, SessionStatus::Existed);
+    let session = store.get(id.unwrap()).await;
+    assert_eq!(session.status().await, SessionStatus::Existed);
     assert_eq!(
         to_value(user)?.as_object().map(|m| m.to_owned()).unwrap(),
-        session.state()?
+        session.state().await
     );
 
     // Second visit home.
@@ -158,14 +157,14 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()
     let buf = hyper::body::to_bytes(res).await?;
     assert!(!buf.is_empty());
     let user = from_slice::<User>(&buf)?;
-    assert_eq!(id, Some(user.id.as_str()));
+    assert_eq!(true, user.logged_in);
     assert_eq!(2, user.count);
 
-    let session = store.get(id.unwrap()).await?;
-    assert_eq!(session.status()?, SessionStatus::Existed);
+    let session = store.get(id.unwrap()).await;
+    assert_eq!(session.status().await, SessionStatus::Existed);
     assert_eq!(
         to_value(user)?.as_object().map(|m| m.to_owned()).unwrap(),
-        session.state()?
+        session.state().await
     );
 
     // First logout.
@@ -190,12 +189,12 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()
     let buf = hyper::body::to_bytes(res).await?;
     assert!(!buf.is_empty());
     let user = from_slice::<User>(&buf)?;
-    assert_eq!(id, Some(user.id.as_str()));
+    assert_eq!(true, user.logged_in);
     assert_eq!(3, user.count);
 
-    let session = store.get(id.unwrap()).await?;
-    assert_eq!(session.status()?, SessionStatus::Created);
-    assert!(session.state()?.is_empty());
+    let session = store.get(id.unwrap()).await;
+    assert_eq!(session.status().await, SessionStatus::Created);
+    assert!(session.state().await.is_empty());
 
     // Second logout.
     let req = Request::builder()
@@ -225,12 +224,12 @@ async fn respond(addr: SocketAddr, store: Arc<dyn Storable>) -> GenericResult<()
 async fn home(session: Session) -> Result<Response<Body>, Error> {
     let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
 
-    Ok(if session.status()? == SessionStatus::Existed {
-        let count = session.get::<usize>("count")?.unwrap_or_else(|| 0) + 1;
-        session.set("count", count)?;
-        session.save().await?;
+    Ok(if session.status().await == SessionStatus::Existed {
+        let count = session.get::<usize>("count").await.unwrap_or_else(|| 0) + 1;
+        session.set("count", count).await;
+        session.save().await;
         info!("User is logged in, {}.", count);
-        builder.body(Body::from(serde_json::to_vec(&session.state()?)?))
+        builder.body(Body::from(serde_json::to_vec(&session.state().await)?))
     } else {
         info!("User is not logged in.");
         builder.body(Body::empty())
@@ -241,45 +240,45 @@ async fn home(session: Session) -> Result<Response<Body>, Error> {
 async fn login(session: Session) -> Result<Response<Body>, Error> {
     let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
 
-    let mut count = session.get::<usize>("count")?.unwrap_or_else(|| 0);
+    let mut count = session.get::<usize>("count").await.unwrap_or_else(|| 0);
 
-    Ok(if session.status()? == SessionStatus::Existed {
+    Ok(if session.status().await == SessionStatus::Existed {
         count += 1;
-        session.set("count", count)?;
-        session.save().await?;
+        session.set("count", count).await;
+        session.save().await;
         info!("User is logged in, {}.", count);
         builder
     } else {
-        session.set("logged_in", true)?;
-        session.set("count", count)?;
-        session.save().await?;
+        session.set("logged_in", true).await;
+        session.set("count", count).await;
+        session.save().await;
         info!("User is logged in, {}.", count);
         builder.header(
             header::SET_COOKIE,
-            Cookie::new(SESSION_NAME, session.id()?)
+            Cookie::new(SESSION_NAME, session.id().await)
                 .encoded()
                 .to_string(),
         )
     }
-    .body(Body::from(serde_json::to_vec(&session.state()?)?))
+    .body(Body::from(serde_json::to_vec(&session.state().await)?))
     .unwrap())
 }
 
 async fn logout(session: Session) -> Result<Response<Body>, Error> {
     let builder = Response::builder().header(header::CONTENT_TYPE, "application/json");
 
-    Ok(if session.status()? == SessionStatus::Existed {
-        let count = session.get::<usize>("count")?.unwrap_or_else(|| 0) + 1;
+    Ok(if session.status().await == SessionStatus::Existed {
+        let count = session.get::<usize>("count").await.unwrap_or_else(|| 0) + 1;
         info!("User is logged in, {}", count);
-        session.set("count", count)?;
+        session.set("count", count).await;
         info!("Session is destroyed");
-        session.destroy().await?;
-        let cookie = Cookie::build(SESSION_NAME, session.id()?)
+        session.destroy().await;
+        let cookie = Cookie::build(SESSION_NAME, session.id().await)
             .max_age(Duration::seconds(-1))
             .finish();
         builder
             .header(header::SET_COOKIE, cookie.encoded().to_string())
-            .body(Body::from(serde_json::to_vec(&session.state()?)?))
+            .body(Body::from(serde_json::to_vec(&session.state().await)?))
     } else {
         info!("Session is not found");
         builder.status(403).body(Body::empty())
@@ -299,7 +298,7 @@ fn hyper_and_warp_with_memory() {
 fn warp_with_memory() {
     fn with_session(
         store: Arc<dyn Storable>,
-    ) -> impl Filter<Extract = (Session,), Error = Rejection> + Clone {
+    ) -> impl Filter<Extract = (Session,), Error = Infallible> + Clone {
         warp::any()
             .map(move || store.clone())
             .and(warp::filters::cookie::optional(SESSION_NAME))
@@ -308,13 +307,7 @@ fn warp_with_memory() {
                     let sid = cookie
                         .filter(|id| id.len() == 32)
                         .unwrap_or_else(|| "".to_owned());
-                    match store.get(&sid).await {
-                        Ok(session) => Ok(session),
-                        Err(err) => {
-                            dbg!(err);
-                            Err(not_found())
-                        }
-                    }
+                    Ok::<_, Infallible>(store.get(&sid).await)
                 },
             )
     }
@@ -406,7 +399,7 @@ fn hyper_with_memory() {
                             req.extensions_mut().insert(cookie_data);
                             // req.extensions_mut().insert(session);
 
-                            let session = store.get(&sid).await?;
+                            let session = store.get(&sid).await;
 
                             match (req.method(), req.uri().path()) {
                                 (&Method::GET, "/") => home(session).await,

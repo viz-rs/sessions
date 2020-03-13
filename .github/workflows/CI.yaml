@@ -57,7 +57,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test fs-async-std --features 'fs-store async-std'
+          args: --test fs-async-std --no-default-features --features 'fs-store async-std'
 
       # - name: redis-warp
       #   uses: actions-rs/cargo@v1

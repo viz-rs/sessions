@@ -20,6 +20,11 @@
 //! for custom session backends.
 //!
 
+#[cfg(all(not(feature = "tokio"), feature = "async-std"))]
+pub use async_std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+#[cfg(all(feature = "tokio", not(feature = "async-std")))]
+pub use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+
 #[cfg(feature = "memory-store")]
 mod memory_store;
 #[cfg(feature = "memory-store")]
@@ -30,10 +35,10 @@ mod fs_store;
 #[cfg(feature = "fs-store")]
 pub use fs_store::FilesystemStore;
 
-// #[cfg(feature = "redis-store")]
-// mod redis_store;
-// #[cfg(feature = "redis-store")]
-// pub use redis_store::RedisStore;
+#[cfg(feature = "redis-store")]
+mod redis_store;
+#[cfg(feature = "redis-store")]
+pub use redis_store::RedisStore;
 
 mod session;
 pub use session::{Session, SessionBeer, SessionStatus};

@@ -1,12 +1,9 @@
 use async_trait::async_trait;
-use std::{
-    collections::HashMap,
-    fmt,
-    io::{Error, ErrorKind},
-    sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
-};
+use std::{collections::HashMap, fmt, sync::Arc};
 
-use crate::{Session, SessionBeer, SessionStatus, State, Storable};
+use crate::{
+    RwLock, RwLockReadGuard, RwLockWriteGuard, Session, SessionBeer, SessionStatus, State, Storable,
+};
 
 type Map = HashMap<String, State>;
 
@@ -27,48 +24,46 @@ impl MemoryStore {
         }
     }
 
-    fn store(&self) -> Result<RwLockReadGuard<'_, Map>, Error> {
-        self.inner
-            .read()
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+    async fn store(&self) -> RwLockReadGuard<'_, Map> {
+        self.inner.read().await
     }
 
-    fn store_mut(&self) -> Result<RwLockWriteGuard<'_, Map>, Error> {
-        self.inner
-            .write()
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+    async fn store_mut(&self) -> RwLockWriteGuard<'_, Map> {
+        self.inner.write().await
     }
 }
 
 #[async_trait]
 impl Storable for MemoryStore {
-    async fn get(&self, sid: &str) -> Result<Session, Error> {
+    async fn get(&self, sid: &str) -> Session {
         let session = Session::new(Arc::new(self.clone()));
 
-        if !self.verify_sid(sid).await? {
-            return Ok(session);
+        if !self.verify_sid(sid).await {
+            return session;
         }
 
-        let exists = self.store()?.contains_key(sid);
+        if self.store().await.contains_key(sid) {
+            let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
 
-        if exists {
-            let SessionBeer { id, state, status } = &mut *session.beer_mut()?;
-            *state = self.store()?.get(sid).cloned().unwrap();
-            *status = SessionStatus::Existed;
-            *id = sid.to_owned();
+            if let Some(data) = self.store().await.get(sid).cloned() {
+                *state = data;
+                *status = SessionStatus::Existed;
+                *id = sid.to_owned();
+            }
         }
 
-        Ok(session)
+        session
     }
 
-    async fn remove(&self, sid: &str) -> Result<(), Error> {
-        self.store_mut()?.remove(sid);
-        Ok(())
+    async fn remove(&self, sid: &str) -> bool {
+        self.store_mut().await.remove(sid).is_some()
     }
 
-    async fn save(&self, session: &Session) -> Result<(), Error> {
-        self.store_mut()?.insert(session.id()?, session.state()?);
-        Ok(())
+    async fn save(&self, session: &Session) -> bool {
+        self.store_mut()
+            .await
+            .insert(session.id().await, session.state().await)
+            .map_or_else(|| true, |_| true)
     }
 
     fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
