@@ -127,26 +127,25 @@ fn tide_with_redis() -> Result<(), surf::Exception> {
                     res.body_json(&session.state().await).unwrap()
                 });
 
-            app.at("/logout")
-                .post(|req: tide::Request<()>| async move {
-                    let session = req.session();
-                    if session.status().await == SessionStatus::Existed {
-                        let count = session.get::<usize>("count").await.unwrap_or_else(|| 0) + 1;
-                        info!("User is logged in, {}.", count);
-                        session.set("count", count).await;
-                        info!("Session is destroyed.");
-                        session.destroy().await;
-                        let cookie = Cookie::build(SESSION_NAME, session.id().await)
-                            .max_age(Duration::seconds(-1))
-                            .finish();
-                        let mut res = tide::Response::new(200);
-                        res.set_cookie(cookie);
-                        res.body_json(&session.state().await).unwrap()
-                    } else {
-                        info!("Session is not found.");
-                        tide::Response::new(403)
-                    }
-                });
+            app.at("/logout").post(|req: tide::Request<()>| async move {
+                let session = req.session();
+                if session.status().await == SessionStatus::Existed {
+                    let count = session.get::<usize>("count").await.unwrap_or_else(|| 0) + 1;
+                    info!("User is logged in, {}.", count);
+                    session.set("count", count).await;
+                    info!("Session is destroyed.");
+                    session.destroy().await;
+                    let cookie = Cookie::build(SESSION_NAME, session.id().await)
+                        .max_age(Duration::seconds(-1))
+                        .finish();
+                    let mut res = tide::Response::new(200);
+                    res.set_cookie(cookie);
+                    res.body_json(&session.state().await).unwrap()
+                } else {
+                    info!("Session is not found.");
+                    tide::Response::new(403)
+                }
+            });
 
             app.listen("localhost:8082").await?;
 
