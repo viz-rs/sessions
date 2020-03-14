@@ -5,14 +5,12 @@ use crate::{
     RwLock, RwLockReadGuard, RwLockWriteGuard, Session, SessionBeer, SessionStatus, State, Storable,
 };
 
-type Map = HashMap<String, State>;
-
 /// MemoryStore
 ///
 /// Stores the session in an in-memory store.
 #[derive(Clone, Debug)]
 pub struct MemoryStore {
-    inner: Arc<RwLock<Map>>,
+    inner: Arc<RwLock<HashMap<String, State>>>,
 }
 
 impl MemoryStore {
@@ -24,11 +22,11 @@ impl MemoryStore {
         }
     }
 
-    async fn store(&self) -> RwLockReadGuard<'_, Map> {
+    async fn store(&self) -> RwLockReadGuard<'_, HashMap<String, State>> {
         self.inner.read().await
     }
 
-    async fn store_mut(&self) -> RwLockWriteGuard<'_, Map> {
+    async fn store_mut(&self) -> RwLockWriteGuard<'_, HashMap<String, State>> {
         self.inner.write().await
     }
 }
@@ -42,10 +40,12 @@ impl Storable for MemoryStore {
             return session;
         }
 
-        if self.store().await.contains_key(sid) {
+        let store = self.store().await;
+
+        if store.contains_key(sid) {
             let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
 
-            if let Some(data) = self.store().await.get(sid).cloned() {
+            if let Some(data) = store.get(sid).cloned() {
                 *state = data;
                 *status = SessionStatus::Existed;
                 *id = sid.to_owned();
