@@ -20,10 +20,10 @@ pub trait Storable: Send + Sync + 'static {
 
     #[cfg(not(feature = "nanoid"))]
     /// Generates a sid/UID fro a session.
-    async fn gen_sid(&self) -> String;
+    async fn generate_id(&self) -> String;
     #[cfg(feature = "nanoid")]
     /// Generates a sid/UID fro a session by nanoid.
-    async fn gen_sid(&self) -> String {
+    async fn generate_id(&self) -> String {
         nanoid::nanoid!(32)
     }
 
