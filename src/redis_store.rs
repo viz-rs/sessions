@@ -69,13 +69,7 @@ impl Storable for RedisStore {
             return session;
         }
 
-        let store = self.store().await;
-
-        if store.is_err() {
-            return session;
-        }
-
-        if let Ok(mut store) = store {
+        if let Ok(mut store) = self.store().await {
             if store
                 .exists(self.prefix() + sid)
                 .await
@@ -84,7 +78,6 @@ impl Storable for RedisStore {
                 if let Ok(raw) = store.get::<String, Vec<u8>>(self.prefix() + sid).await {
                     if let Ok(data) = from_slice(&raw) {
                         let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
-
                         *state = data;
                         *status = SessionStatus::Existed;
                         *id = sid.to_owned();

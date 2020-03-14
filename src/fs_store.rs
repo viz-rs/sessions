@@ -34,19 +34,14 @@ impl Storable for FilesystemStore {
             return session;
         }
 
-        let file = fs::read(self.path.join(sid)).await;
-
-        if file.is_ok() {
-            let raw = file.unwrap();
-
+        if let Ok(raw) = fs::read(self.path.join(sid)).await {
             // Should be a map `{}`
             if raw.len() < 2 {
                 return session;
             }
 
-            let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
-
             if let Ok(data) = from_slice(&raw) {
+                let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
                 *state = data;
                 *status = SessionStatus::Existed;
                 *id = sid.to_owned();

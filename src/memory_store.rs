@@ -43,9 +43,8 @@ impl Storable for MemoryStore {
         let store = self.store().await;
 
         if store.contains_key(sid) {
-            let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
-
             if let Some(data) = store.get(sid).cloned() {
+                let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
                 *state = data;
                 *status = SessionStatus::Existed;
                 *id = sid.to_owned();
