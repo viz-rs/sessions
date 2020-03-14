@@ -130,7 +130,7 @@ impl Session {
         let id = self.id().await;
         if id.is_empty() {
             // Generates a new id.
-            self.set_id(self.store.gen_sid().await).await;
+            self.set_id(self.store.generate_id().await).await;
         }
         self.store.save(self).await
     }

@@ -356,7 +356,7 @@ fn warp_with_redis() {
     });
 
     rt.block_on(async move {
-        for _ in 0..1 {
+        for _ in 0..10 {
             let _ = respond(addr, store_1.clone()).await;
         }
     });
