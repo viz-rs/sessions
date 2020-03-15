@@ -22,7 +22,7 @@ pub struct Session {
 impl Session {
     /// Creates new session.
     #[inline]
-    pub fn new(store: Arc<impl Storable>) -> Self {
+    pub fn new(store: Arc<dyn Storable>) -> Self {
         Self {
             store,
             beer: Arc::default(),

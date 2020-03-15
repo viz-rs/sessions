@@ -1,12 +1,8 @@
 use async_trait::async_trait;
-use redis::{aio::Connection, AsyncCommands, Client};
+use redis::{aio::Connection, AsyncCommands, Client, RedisResult};
 use serde_json::{from_slice, to_vec};
 
-use std::{
-    fmt,
-    io::{Error, ErrorKind},
-    sync::Arc,
-};
+use std::{fmt, sync::Arc};
 
 use crate::{Session, SessionBeer, SessionStatus, Storable};
 
@@ -17,7 +13,7 @@ use crate::{Session, SessionBeer, SessionStatus, Storable};
 pub struct RedisStore {
     prefix: String,
     max_age: usize,
-    client: Client,
+    client: Arc<Client>,
 }
 
 impl Default for RedisStore {
@@ -25,7 +21,7 @@ impl Default for RedisStore {
         Self {
             prefix: "session:id".to_owned(),
             max_age: 60 * 60 * 24 * 7 * 2, // Two weeks
-            client: Client::open("redis://127.0.0.1/").unwrap(),
+            client: Arc::new(Client::open("redis://127.0.0.1/").unwrap()),
         }
     }
 }
@@ -35,8 +31,8 @@ impl RedisStore {
     #[inline]
     pub fn new(client: Client, prefix: &str, max_age: usize) -> Self {
         Self {
-            client,
             max_age,
+            client: Arc::new(client),
             prefix: prefix.to_owned(),
         }
     }
@@ -52,11 +48,8 @@ impl RedisStore {
     }
 
     /// Gets the redis connection.
-    pub async fn store(&self) -> Result<Connection, Error> {
-        self.client
-            .get_async_connection()
-            .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+    pub async fn store(&self) -> RedisResult<Connection> {
+        self.client.get_async_connection().await
     }
 }
 
@@ -110,11 +103,10 @@ impl Storable for RedisStore {
             return false;
         }
 
-        let mut store = store.unwrap();
-
         if let Ok(data) = to_vec(&session.state().await) {
-            let max_age = self.max_age();
             let id = session.id().await;
+            let max_age = self.max_age();
+            let mut store = store.unwrap();
 
             if max_age > 0 {
                 store.set_ex::<String, Vec<u8>, bool>(self.prefix() + &id, data, max_age)
