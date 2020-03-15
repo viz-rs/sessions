@@ -26,7 +26,7 @@
 ### Features
 
 - Async/await, supports [`tokio`](https://tokio.rs) and [`async-std`](https://async.rs/).
-  **tokio** is by default.
+  **tokio** is by defaults.
 
 - Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on **serde_json**.
 
