@@ -36,11 +36,11 @@
 ```rust
 let store = Arc::new(CustomStore::new());
 
-let id = format!("id.{}", 0);                   // Generates an UID
+let id = format!("id.{}", 0);                   // ID froms cookie or anywhere.
 let store = store.clone();
-let session = store.get(&id).await.unwrap();    // Fresh Session
+let session = store.get(&id).await.unwrap();    // If matches, returns already exists session, or returns a fresh session.
 
-session.id().unwrap();                          // ""
+session.id().unwrap();                          // If session is fresh, returns an empty string before saving session.
 session.status().unwrap();                      // SessionStatus::Created
 session.state().unwrap();                       // State
 
