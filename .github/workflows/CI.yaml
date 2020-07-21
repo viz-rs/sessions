@@ -70,6 +70,7 @@ jobs:
         options: --entrypoint redis-server
 
     steps:
+      - uses: actions/checkout@master
       - name: redis-warp
         uses: actions-rs/cargo@v1
         with:
