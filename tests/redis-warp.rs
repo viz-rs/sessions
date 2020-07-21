@@ -323,7 +323,7 @@ fn warp_with_redis() {
 
     let addr: std::net::SocketAddr = "127.0.0.1:1337".parse().unwrap();
 
-    let client = Arc::new(RedisClient::open("redis://127.0.0.1/").unwrap());
+    let client = Arc::new(RedisClient::open("redis://localhost/").unwrap());
 
     let store = RedisStore::new(client, "session:id:", 60 * 5);
 

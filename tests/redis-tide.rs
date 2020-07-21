@@ -77,7 +77,7 @@ async fn tide_with_redis() -> Result<(), surf::Exception> {
     }
 
     let arc_store = Arc::new(RedisStore::new(
-        Arc::new(RedisClient::open("redis://127.0.0.1/").unwrap()),
+        Arc::new(RedisClient::open("redis://localhost/").unwrap()),
         "session:id:",
         60 * 5,
     ));
