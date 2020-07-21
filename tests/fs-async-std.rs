@@ -1,13 +1,16 @@
-use async_std::{fs, task};
+use std::{
+    future::Future,
+    sync::{Arc, RwLock},
+};
+
+use anyhow::{anyhow, Result};
+use async_std::task;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
+use tempfile::tempdir;
+
 use sessions::{FilesystemStore, SessionStatus, Storable};
-use std::future::Future;
-use std::{
-    env,
-    sync::{Arc, RwLock},
-};
 
 struct Runtime {
     count: usize,
@@ -36,15 +39,15 @@ impl Runtime {
 }
 
 #[test]
-fn session_in_filesystem() {
+fn session_in_filesystem() -> Result<()> {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
         name: String,
         no: u32,
     }
 
-    let path = env::current_dir().unwrap().join("target").join("sessions");
-    let store = FilesystemStore::new(path.clone());
+    let dir = tempdir()?;
+    let store = FilesystemStore::new(dir.path().to_path_buf());
 
     let sids = Arc::new(RwLock::new(Vec::new()));
 
@@ -183,8 +186,6 @@ fn session_in_filesystem() {
     }
 
     rt.block_on(async {
-        let _ = fs::create_dir(path.clone()).await;
-
         join_all(handlers).await;
         // // println!("--------------------------------------");
         // // dbg!(Arc::try_unwrap(arc_store).unwrap());
@@ -227,6 +228,6 @@ fn session_in_filesystem() {
 
         // dbg!(Arc::try_unwrap(arc_store).unwrap());
 
-        let _ = fs::remove_dir_all(path.clone()).await;
-    });
+        dir.close().map_err(|e| anyhow!(e))
+    })
 }

@@ -1,5 +1,6 @@
-use async_trait::async_trait;
 use std::fmt;
+
+use async_trait::async_trait;
 
 use crate::Session;
 
@@ -38,14 +39,14 @@ pub trait Storable: Send + Sync + 'static {
         sid.len() == 32
     }
 
-    /// @TODO: encode & decode the state
-
-    /// Just hacks for debuging the Store.
-    fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    /// Set the Storable's name. By default it uses the type signature.
+    fn name(&self) -> &str {
+        std::any::type_name::<Self>()
+    }
 }
 
 impl fmt::Debug for dyn Storable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.debug(f)
+        f.debug_struct("Store").field("type", &self.name()).finish()
     }
 }

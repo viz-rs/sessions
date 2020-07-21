@@ -2,11 +2,13 @@
 //!
 //! Stores the values.
 
-use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{from_value, to_value};
 use std::sync::Arc;
 
-use crate::{RwLock, RwLockReadGuard, RwLockWriteGuard, State, Storable};
+use async_lock::{Lock, LockGuard};
+use serde::{de::DeserializeOwned, Serialize};
+use serde_json::{from_value, to_value};
+
+use crate::{State, Storable};
 
 /// Session stores the values.
 #[derive(Debug)]
@@ -16,7 +18,7 @@ pub struct Session {
     /// A session beer.
     /// Why not use `Rc<RefCell<Map<String, Value>>>`?
     /// See: https://github.com/hyperium/http/blob/master/src/extensions.rs
-    beer: Arc<RwLock<SessionBeer>>,
+    beer: Lock<SessionBeer>,
 }
 
 impl Session {
@@ -25,7 +27,7 @@ impl Session {
     pub fn new(store: Arc<dyn Storable>) -> Self {
         Self {
             store,
-            beer: Arc::default(),
+            beer: Lock::default(),
         }
     }
 
@@ -34,16 +36,10 @@ impl Session {
         self.store.clone()
     }
 
-    /// Reads the session beer.
-    pub async fn beer(&self) -> RwLockReadGuard<'_, SessionBeer> {
-        self.beer.read().await
+    /// Reads or writes the session beer.
+    pub async fn beer(&self) -> LockGuard<SessionBeer> {
+        self.beer.lock().await
     }
-
-    /// Writes the session beer.
-    pub async fn beer_mut(&self) -> RwLockWriteGuard<'_, SessionBeer> {
-        self.beer.write().await
-    }
-
     /// Gets the session id
     pub async fn id(&self) -> String {
         self.beer().await.id.clone()
@@ -51,7 +47,7 @@ impl Session {
 
     /// Overrides a new id on this session
     pub async fn set_id(&self, id: String) {
-        self.beer_mut().await.id = id;
+        self.beer().await.id = id;
     }
 
     /// Gets the session status
@@ -61,7 +57,7 @@ impl Session {
 
     /// Overrides a new status on this session
     pub async fn set_status(&self, status: SessionStatus) {
-        self.beer_mut().await.status = status;
+        self.beer().await.status = status;
     }
 
     /// Gets the session state
@@ -71,7 +67,7 @@ impl Session {
 
     /// Overrides a new state on this session
     pub async fn set_state(&self, state: State) {
-        self.beer_mut().await.state = state;
+        self.beer().await.state = state;
     }
 
     /// Gets a reference to the value corresponding to the key.
@@ -92,7 +88,7 @@ impl Session {
     pub async fn set<T: DeserializeOwned + Serialize>(&self, key: &str, val: T) -> Option<T> {
         // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
         if let Some(prev) = self
-            .beer_mut()
+            .beer()
             .await
             .state
             .insert(key.to_owned(), to_value(val).ok()?)
@@ -110,7 +106,7 @@ impl Session {
     /// was previously in the state.
     pub async fn remove<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
         // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
-        if let Some(val) = self.beer_mut().await.state.remove(key) {
+        if let Some(val) = self.beer().await.state.remove(key) {
             // if *status != SessionStatus::Changed {
             //     *status = SessionStatus::Changed;
             // }
@@ -122,7 +118,7 @@ impl Session {
 
     /// Clears the state of this session.
     pub async fn clear(&self) {
-        self.beer_mut().await.state.clear();
+        self.beer().await.state.clear();
     }
 
     /// Saves this session to the store.

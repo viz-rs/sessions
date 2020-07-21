@@ -1,8 +1,8 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use redis::{aio::Connection, AsyncCommands, Client, RedisResult};
 use serde_json::{from_slice, to_vec};
-
-use std::{fmt, sync::Arc};
 
 use crate::{Session, SessionBeer, SessionStatus, Storable};
 
@@ -29,10 +29,10 @@ impl Default for RedisStore {
 impl RedisStore {
     /// Creates new Redis Store.
     #[inline]
-    pub fn new(client: Client, prefix: &str, max_age: usize) -> Self {
+    pub fn new(client: Arc<Client>, prefix: &str, max_age: usize) -> Self {
         Self {
+            client,
             max_age,
-            client: Arc::new(client),
             prefix: prefix.to_owned(),
         }
     }
@@ -63,14 +63,10 @@ impl Storable for RedisStore {
         }
 
         if let Ok(mut store) = self.store().await {
-            if store
-                .exists(self.prefix() + sid)
-                .await
-                .unwrap_or_else(|_| false)
-            {
+            if store.exists(self.prefix() + sid).await.unwrap_or_default() {
                 if let Ok(raw) = store.get::<String, Vec<u8>>(self.prefix() + sid).await {
                     if let Ok(data) = from_slice(&raw) {
-                        let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
+                        let SessionBeer { id, state, status } = &mut *session.beer().await;
                         *state = data;
                         *status = SessionStatus::Existed;
                         *id = sid.to_owned();
@@ -83,44 +79,34 @@ impl Storable for RedisStore {
     }
 
     async fn remove(&self, sid: &str) -> bool {
-        let store = self.store().await;
-
-        if store.is_err() {
-            return false;
-        }
-
-        store
-            .unwrap()
-            .del::<String, bool>(self.prefix() + sid)
-            .await
-            .unwrap_or_else(|_| false)
-    }
-
-    async fn save(&self, session: &Session) -> bool {
-        let store = self.store().await;
-
-        if store.is_err() {
-            return false;
-        }
-
-        if let Ok(data) = to_vec(&session.state().await) {
-            let id = session.id().await;
-            let max_age = self.max_age();
-            let mut store = store.unwrap();
-
-            if max_age > 0 {
-                store.set_ex::<String, Vec<u8>, bool>(self.prefix() + &id, data, max_age)
-            } else {
-                store.set::<String, Vec<u8>, bool>(self.prefix() + &id, data)
-            }
-            .await
-            .unwrap_or_else(|_| false)
+        if let Ok(mut store) = self.store().await {
+            store
+                .del::<String, bool>(self.prefix() + sid)
+                .await
+                .unwrap_or_default()
         } else {
             false
         }
     }
 
-    fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.client, f)
+    async fn save(&self, session: &Session) -> bool {
+        if let Ok(mut store) = self.store().await {
+            if let Ok(data) = to_vec(&session.state().await) {
+                let id = session.id().await;
+                let max_age = self.max_age();
+
+                if max_age > 0 {
+                    store.set_ex::<String, Vec<u8>, bool>(self.prefix() + &id, data, max_age)
+                } else {
+                    store.set::<String, Vec<u8>, bool>(self.prefix() + &id, data)
+                }
+                .await
+                .unwrap_or_default()
+            } else {
+                false
+            }
+        } else {
+            false
+        }
     }
 }

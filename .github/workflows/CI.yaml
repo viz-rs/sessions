@@ -51,13 +51,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test fs-tokio --features 'fs-store tokio'
+          args: --test fs-tokio --features 'fs-store blocking'
 
       - name: fs-async-std
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test fs-async-std --no-default-features --features 'nanoid fs-store async-std'
+          args: --test fs-async-std --no-default-features --features 'fs-store blocking'
 
       # - name: redis-warp
       #   uses: actions-rs/cargo@v1

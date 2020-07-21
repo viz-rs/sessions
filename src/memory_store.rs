@@ -1,16 +1,16 @@
-use async_trait::async_trait;
-use std::{collections::HashMap, fmt, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
-use crate::{
-    RwLock, RwLockReadGuard, RwLockWriteGuard, Session, SessionBeer, SessionStatus, State, Storable,
-};
+use async_lock::{Lock, LockGuard};
+use async_trait::async_trait;
+
+use crate::{Session, SessionBeer, SessionStatus, State, Storable};
 
 /// MemoryStore
 ///
 /// Stores the session in an in-memory store.
 #[derive(Clone, Debug)]
 pub struct MemoryStore {
-    inner: Arc<RwLock<HashMap<String, State>>>,
+    inner: Lock<HashMap<String, State>>,
 }
 
 impl MemoryStore {
@@ -18,16 +18,12 @@ impl MemoryStore {
     #[inline]
     pub fn new() -> Self {
         Self {
-            inner: Arc::default(),
+            inner: Lock::default(),
         }
     }
 
-    async fn store(&self) -> RwLockReadGuard<'_, HashMap<String, State>> {
-        self.inner.read().await
-    }
-
-    async fn store_mut(&self) -> RwLockWriteGuard<'_, HashMap<String, State>> {
-        self.inner.write().await
+    async fn store(&self) -> LockGuard<HashMap<String, State>> {
+        self.inner.lock().await
     }
 }
 
@@ -44,7 +40,7 @@ impl Storable for MemoryStore {
 
         if store.contains_key(sid) {
             if let Some(data) = store.get(sid).cloned() {
-                let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
+                let SessionBeer { id, state, status } = &mut *session.beer().await;
                 *state = data;
                 *status = SessionStatus::Existed;
                 *id = sid.to_owned();
@@ -55,17 +51,13 @@ impl Storable for MemoryStore {
     }
 
     async fn remove(&self, sid: &str) -> bool {
-        self.store_mut().await.remove(sid).is_some()
+        self.store().await.remove(sid).is_some()
     }
 
     async fn save(&self, session: &Session) -> bool {
-        self.store_mut()
+        self.store()
             .await
             .insert(session.id().await, session.state().await)
             .map_or_else(|| true, |_| true)
-    }
-
-    fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.inner, f)
     }
 }

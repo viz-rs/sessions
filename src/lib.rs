@@ -20,11 +20,6 @@
 //! for custom session backends.
 //!
 
-#[cfg(all(not(feature = "tokio"), feature = "async-std"))]
-pub use async_std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-#[cfg(all(feature = "tokio", not(feature = "async-std")))]
-pub use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-
 #[cfg(feature = "memory-store")]
 mod memory_store;
 #[cfg(feature = "memory-store")]

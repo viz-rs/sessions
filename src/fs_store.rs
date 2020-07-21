@@ -1,11 +1,8 @@
-use async_trait::async_trait;
-use serde_json::{from_slice, to_vec};
-use std::{fmt, path::PathBuf, sync::Arc};
+use std::{fs, path::PathBuf, sync::Arc};
 
-#[cfg(all(not(feature = "tokio"), feature = "async-std"))]
-use async_std::fs;
-#[cfg(all(feature = "tokio", not(feature = "async-std")))]
-use tokio::fs;
+use async_trait::async_trait;
+use blocking::unblock;
+use serde_json::{from_slice, to_vec};
 
 use crate::{Session, SessionBeer, SessionStatus, Storable};
 
@@ -34,14 +31,15 @@ impl Storable for FilesystemStore {
             return session;
         }
 
-        if let Ok(raw) = fs::read(self.path.join(sid)).await {
+        let path = self.path.join(sid);
+        if let Ok(raw) = unblock!(fs::read(path)) {
             // Should be a map `{}`
             if raw.len() < 2 {
                 return session;
             }
 
             if let Ok(data) = from_slice(&raw) {
-                let SessionBeer { id, state, status } = &mut *session.beer_mut().await;
+                let SessionBeer { id, state, status } = &mut *session.beer().await;
                 *state = data;
                 *status = SessionStatus::Existed;
                 *id = sid.to_owned();
@@ -52,20 +50,16 @@ impl Storable for FilesystemStore {
     }
 
     async fn remove(&self, sid: &str) -> bool {
-        fs::remove_file(self.path.join(sid)).await.is_ok()
+        let path = self.path.join(sid);
+        unblock!(fs::remove_file(path)).is_ok()
     }
 
     async fn save(&self, session: &Session) -> bool {
         if let Ok(data) = to_vec(&session.state().await) {
-            fs::write(self.path.join(session.id().await), data)
-                .await
-                .is_ok()
+            let sid = self.path.join(session.id().await);
+            unblock!(fs::write(sid, data)).is_ok()
         } else {
             false
         }
-    }
-
-    fn debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.path, f)
     }
 }
