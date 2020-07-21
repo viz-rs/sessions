@@ -71,6 +71,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          components: rustfmt
       - name: redis-warp
         uses: actions-rs/cargo@v1
         with:
@@ -96,6 +101,3 @@ jobs:
 
       - name: fmt
         run: cargo fmt --all -- --check
-
-      - name: Docs
-        run: cargo doc
