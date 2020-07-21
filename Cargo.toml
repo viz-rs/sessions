@@ -47,7 +47,7 @@ redis-store = ["redis"]
 
 [[test]]
 name = "memory"
-required-features = ["memory-store"]
+required-features = ["memory-store", "blocking"]
 
 [[test]]
 name = "memory-warp-hyper"

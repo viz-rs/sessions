@@ -39,7 +39,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test memory --features 'memory-store'
+          args: --test memory --features 'memory-store blocking'
 
       - name: memory-warp-hyper
         uses: actions-rs/cargo@v1

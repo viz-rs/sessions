@@ -1,8 +1,10 @@
 use std::sync::{Arc, RwLock};
 
+use blocking::block_on;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
+
 use sessions::{MemoryStore, SessionStatus, Storable};
 
 #[test]
@@ -21,7 +23,7 @@ fn session_in_memory() {
 
     let mut handlers = Vec::new();
 
-    smol::run(async move {
+    block_on(async move {
         for i in 0..10 {
             let id = format!("trek-{}", i);
             let store = arc_store.clone();
