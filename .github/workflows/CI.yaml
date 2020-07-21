@@ -57,7 +57,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test fs-async-std --no-default-features --features 'fs-store blocking'
+          args: --test fs-async-std --features 'fs-store blocking'
 
       # - name: redis-warp
       #   uses: actions-rs/cargo@v1
@@ -68,7 +68,7 @@ jobs:
       #   uses: actions-rs/cargo@v1
       #   with:
       #     command: test
-      #     args: --test redis-tide --no-default-features --features 'nanoid redis-store-async-std async-std cookie'
+      #     args: --test redis-tide --features 'redis-store-async-std async-std'
 
   check_fmt_and_docs:
     name: Checking fmt and docs
