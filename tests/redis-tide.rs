@@ -6,9 +6,10 @@ use log::info;
 use redis::Client as RedisClient;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use sessions::{RedisStore, Session, SessionStatus, Storable};
-use tide::{self, http, Middleware, Next, Request, Response};
+use tide::{self, http, Middleware, Next, Request, Response, Result};
 use time::Duration;
+
+use sessions::{RedisStore, Session, SessionStatus, Storable};
 
 static SESSION_NAME: &str = "session.id";
 
@@ -68,7 +69,7 @@ impl<State: Send + Sync + 'static> RequestExt for Request<State> {
 }
 
 #[async_std::test]
-async fn tide_with_redis() -> Result<(), surf::Exception> {
+async fn tide_with_redis() -> Result<()> {
     pretty_env_logger::init();
 
     #[derive(Deserialize, Serialize)]

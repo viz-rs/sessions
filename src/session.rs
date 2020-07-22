@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use async_lock::{Lock, LockGuard};
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{from_value, to_value};
+use serde_json::{from_value, to_value, Value};
 
 use crate::{State, Storable};
 
@@ -70,13 +70,18 @@ impl Session {
         self.beer().await.state = state;
     }
 
-    /// Gets a reference to the value corresponding to the key.
+    /// Gets a reference to the value corresponding to the key and deserializes it.
     pub async fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
         if let Some(val) = self.beer().await.state.get(key).cloned() {
             from_value(val).ok()
         } else {
             None
         }
+    }
+
+    /// Gets a reference to the value corresponding to the key.
+    pub async fn get_value(&self, key: &str) -> Option<Value> {
+        self.beer().await.state.get(key).cloned()
     }
 
     /// Sets a key-value pair into the state.
@@ -86,7 +91,6 @@ impl Session {
     /// If the state did have this key present, the value is updated, and the old
     /// value is returned.
     pub async fn set<T: DeserializeOwned + Serialize>(&self, key: &str, val: T) -> Option<T> {
-        // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
         if let Some(prev) = self
             .beer()
             .await
@@ -105,7 +109,6 @@ impl Session {
     /// Removes a key from the state, returning the value at the key if the key
     /// was previously in the state.
     pub async fn remove<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
-        // let SessionBeer { state, status: _ } = &mut *self.beer_mut()?;
         if let Some(val) = self.beer().await.state.remove(key) {
             // if *status != SessionStatus::Changed {
             //     *status = SessionStatus::Changed;
