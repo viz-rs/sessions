@@ -72,11 +72,7 @@ impl Session {
 
     /// Gets a reference to the value corresponding to the key and deserializes it.
     pub async fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
-        if let Some(val) = self.beer().await.state.get(key).cloned() {
-            from_value(val).ok()
-        } else {
-            None
-        }
+        from_value(self.beer().await.state.get(key).cloned()?).ok()
     }
 
     /// Gets a reference to the value corresponding to the key.

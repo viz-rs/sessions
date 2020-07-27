@@ -19,24 +19,17 @@ pub trait Storable: Send + Sync + 'static {
     /// Saves a session.
     async fn save(&self, session: &Session) -> bool;
 
-    #[cfg(not(feature = "nanoid"))]
-    /// Generates a sid/UID fro a session.
-    async fn generate_sid(&self) -> String;
-    #[cfg(feature = "nanoid")]
     /// Generates a sid/UID fro a session by nanoid.
     async fn generate_sid(&self) -> String {
         nanoid::nanoid!(32)
     }
 
-    #[cfg(not(feature = "nanoid"))]
-    /// Verifies a sid/UID.
-    async fn verify_sid(&self, sid: &str) -> bool {
-        sid.len() > 0
-    }
-    #[cfg(feature = "nanoid")]
     /// Verifies a sid/UID.
     async fn verify_sid(&self, sid: &str) -> bool {
         sid.len() == 32
+            && sid
+                .chars()
+                .all(|x| x.is_ascii_alphanumeric() || x == '_' || x == '-')
     }
 
     /// Set the Storable's name. By default it uses the type signature.

@@ -96,9 +96,9 @@ impl Storable for RedisStore {
                 let max_age = self.max_age();
 
                 if max_age > 0 {
-                    store.set_ex::<String, Vec<u8>, bool>(self.prefix() + &id, data, max_age)
+                    store.set_ex(self.prefix() + &id, data, max_age)
                 } else {
-                    store.set::<String, Vec<u8>, bool>(self.prefix() + &id, data)
+                    store.set(self.prefix() + &id, data)
                 }
                 .await
                 .unwrap_or_default()
