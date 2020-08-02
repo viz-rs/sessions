@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use blocking::block_on;
+use smol::block_on;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};

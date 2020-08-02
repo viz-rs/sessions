@@ -88,7 +88,7 @@ async fn tide_with_redis() -> Result<()> {
 
     let mut app = tide::new();
 
-    app.middleware(SessionsMiddleware::new(store_0));
+    app.with(SessionsMiddleware::new(store_0));
 
     app.at("/").get(|req: tide::Request<()>| async move {
         let session = req.session();

@@ -90,7 +90,7 @@ store.remove(&id).await;                        // bool
 - [x] Memory
 - [x] Filesystem
 - [x] Redis
-- [ ] sled
+- [ ] Sled
 - [ ] Memcached
 - [ ] Mongodb
 - [ ] PostgreSQL
