@@ -29,7 +29,7 @@ fn session_in_memory() {
             let store = arc_store.clone();
             let sids = sids.clone();
 
-            handlers.push(smol::Task::spawn(async move {
+            handlers.push(smol::spawn(async move {
                 println!(" ========> {} <=========", i);
                 // let session = Session::new(&id, store);
                 let session = store.get(&id).await;
