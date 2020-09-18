@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use async_lock::{Lock, LockGuard};
+use async_rwlock::RwLock;
 use async_trait::async_trait;
 
 use crate::{Session, SessionBeer, SessionStatus, State, Storable};
@@ -10,7 +10,7 @@ use crate::{Session, SessionBeer, SessionStatus, State, Storable};
 /// Stores the session in an in-memory store.
 #[derive(Clone, Debug)]
 pub struct MemoryStore {
-    inner: Lock<HashMap<String, State>>,
+    inner: Arc<RwLock<HashMap<String, State>>>,
 }
 
 impl MemoryStore {
@@ -18,12 +18,8 @@ impl MemoryStore {
     #[inline]
     pub fn new() -> Self {
         Self {
-            inner: Lock::default(),
+            inner: Arc::default(),
         }
-    }
-
-    async fn store(&self) -> LockGuard<HashMap<String, State>> {
-        self.inner.lock().await
     }
 }
 
@@ -36,11 +32,11 @@ impl Storable for MemoryStore {
             return session;
         }
 
-        let store = self.store().await;
+        let store = self.inner.read().await;
 
         if store.contains_key(sid) {
             if let Some(data) = store.get(sid).cloned() {
-                let SessionBeer { id, state, status } = &mut *session.beer().await;
+                let SessionBeer { id, state, status } = &mut *session.write().await;
                 *state = data;
                 *status = SessionStatus::Existed;
                 *id = sid.to_owned();
@@ -51,11 +47,12 @@ impl Storable for MemoryStore {
     }
 
     async fn remove(&self, sid: &str) -> bool {
-        self.store().await.remove(sid).is_some()
+        self.inner.write().await.remove(sid).is_some()
     }
 
     async fn save(&self, session: &Session) -> bool {
-        self.store()
+        self.inner
+            .write()
             .await
             .insert(session.id().await, session.state().await)
             .map_or_else(|| true, |_| true)

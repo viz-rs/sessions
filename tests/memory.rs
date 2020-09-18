@@ -1,9 +1,9 @@
 use std::sync::{Arc, RwLock};
 
-use smol::block_on;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string, Map};
+use smol::block_on;
 
 use sessions::{MemoryStore, SessionStatus, Storable};
 

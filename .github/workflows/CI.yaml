@@ -51,13 +51,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test fs-tokio --features 'fs-store blocking'
+          args: --test fs-tokio --features 'fs-store'
 
       - name: fs-async-std
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --test fs-async-std --features 'fs-store blocking'
+          args: --test fs-async-std --features 'fs-store'
 
   build_and_test_redis:
     name: Build and test redis

@@ -66,7 +66,7 @@ impl Storable for RedisStore {
             if store.exists(self.prefix() + sid).await.unwrap_or_default() {
                 if let Ok(raw) = store.get::<String, Vec<u8>>(self.prefix() + sid).await {
                     if let Ok(data) = from_slice(&raw) {
-                        let SessionBeer { id, state, status } = &mut *session.beer().await;
+                        let SessionBeer { id, state, status } = &mut *session.write().await;
                         *state = data;
                         *status = SessionStatus::Existed;
                         *id = sid.to_owned();
