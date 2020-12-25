@@ -5,22 +5,26 @@ use std::sync::{
     Arc,
 };
 
+mod config;
 mod cookie_options;
 mod storage;
-mod config;
 
+pub use config::Config;
 pub use cookie_options::CookieOptions;
 pub use storage::Storage;
-pub use config::Config;
 
 #[derive(Debug)]
-pub struct Session<S: Storage> {
+pub struct Session<S: Storage, F> {
     pub id: String,
     pub fresh: AtomicBool,
-    store: Arc<S>,
+    //store: Arc<S>,
+    config: Arc<Config<S, F>>,
 }
 
-impl<S: Storage> Session<S> {
+impl<S: Storage, F> Session<S, F>
+where
+    F: Fn() -> String,
+{
     /// Gets the session id
     pub fn id(&self) -> String {
         self.id.clone()
@@ -47,7 +51,9 @@ impl<S: Storage> Session<S> {
     pub async fn save(&self) {}
 
     /// Renews the new state
-    pub async fn renew(&self) {}
+    pub async fn renew(&mut self) {
+        //self.id = self.config.generate_id();
+    }
 
     /// Destroys the current state from store
     pub async fn destroy(&self) {}

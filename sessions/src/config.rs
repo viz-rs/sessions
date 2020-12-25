@@ -7,5 +7,5 @@ use crate::Storage;
 pub struct Config<S: Storage, F> {
     cookie: CookieOptions,
     storage: Arc<S>,
-    generate_id: F
+    generate_id: F,
 }
