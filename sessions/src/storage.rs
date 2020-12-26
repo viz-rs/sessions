@@ -1,15 +1,23 @@
+use std::fmt::Debug;
+use anyhow::Result;
 use async_trait::async_trait;
 
+use crate::Session;
+
 #[async_trait]
-pub trait Storage: Send + Sync + 'static {
-    async fn get(&self);
+pub trait Storage: Debug + Send + Sync + 'static {
+    /// Get a data from storage by the key
+    async fn get<S, G, V>(&self, key: &str) -> Result<Session<S, G, V>>;
 
-    async fn set(&self);
+    /// Set a data to storage by the key
+    async fn set(&self, key: &str) -> Result<()>;
 
-    async fn remove(&self);
+    /// Remove a data from storage by the key
+    async fn remove<S, G, V>(&self, key: &str) -> Result<Session<S, G, V>>;
 
-    async fn reset(&self);
+    /// Reset the storage and remove all keys
+    async fn reset(&self) -> Result<()>;
 
-    async fn close(&self);
+    /// Close the connection
+    async fn close(&self) -> Result<()>;
 }
-
