@@ -4,8 +4,11 @@ version = "0.1.0"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 edition = "2018"
 
-[dependencies]
-anyhow = "1.0"
-async-trait = "0.1"
-cookie = "0.14"
+[features]
+memory = ["sessions-memory"]
+redis = ["sessions-redis"]
 
+[dependencies]
+sessions-core = { path = "../sessions-core", version = "0.1.0" }
+sessions-memory = { path = "../sessions-memory", version = "0.1.0", optional = true }
+sessions-redis = { path = "../sessions-redis", version = "0.1.0", optional = true }

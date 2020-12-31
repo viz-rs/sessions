@@ -4,6 +4,17 @@ version = "0.1.0"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["tokio-comp"]
+tokio-comp = ["redis/aio", "redis/tokio-comp"]
+async-std-comp = ["redis/aio", "redis/async-std-comp"]
+
+tls = ["redis/tls"]
+tokio-tls-comp = ["redis/aio", "redis/tokio-native-tls-comp"]
+async-tls-std-comp = ["redis/aio", "redis/async-std-tls-comp"]
 
 [dependencies]
+sessions-core = { path = "../sessions-core", version = "0.1.0" }
+
+redis = "0.19"
+serde_json = "1.0"

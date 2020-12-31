@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "sessions",
+  "sessions-core",
   "sessions-memory",
   "sessions-redis"
 ]

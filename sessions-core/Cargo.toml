@@ -1,8 +1,12 @@
 [package]
-name = "sessions-memory"
+name = "sessions-core"
 version = "0.1.0"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.1.0" }
+anyhow = "1.0"
+async-trait = "0.1"
+cookie = "0.14"
+serde = "1.0"
+serde_json = "1.0"

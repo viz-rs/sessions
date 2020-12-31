@@ -1,11 +1,7 @@
-//! Sessions
+pub use sessions_core::*;
 
-mod session;
-mod config;
-mod cookie_options;
-mod storage;
+#[cfg(feature = "memory")]
+pub use sessions_memory::MemoryStorage;
 
-pub use config::Config;
-pub use cookie_options::CookieOptions;
-pub use storage::Storage;
-pub use session::Session;
+#[cfg(feature = "redis")]
+pub use sessions_redis::RedisStorage;
