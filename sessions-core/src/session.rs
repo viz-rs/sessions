@@ -13,25 +13,18 @@ use crate::{
     Config, Data, Result, Storage,
 };
 
+/// Session
 pub struct Session {
+    /// Session's id
     pub id: String,
+    /// Session's status
     pub status: AtomicUsize,
     data: Arc<RwLock<Data>>,
     config: Arc<Config>,
 }
 
-impl fmt::Debug for Session {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Session")
-            .field("id", &self.id)
-            .field("status", &self.status)
-            .field("data", &self.data)
-            .field("config", &self.config)
-            .finish()
-    }
-}
-
 impl Session {
+    /// Creates new `Session` with `id` `status` and `Config`
     pub fn new(id: &str, status: usize, config: Arc<Config>) -> Self {
         Self {
             id: id.to_string(),
@@ -62,8 +55,8 @@ impl Session {
     }
 
     /// Gets the session status
-    pub fn fresh(&self) -> bool {
-        self.status.load(Ordering::Relaxed) == 0
+    pub fn status(&self) -> usize {
+        self.status.load(Ordering::Relaxed)
     }
 
     /// Gets a value by the key
@@ -126,5 +119,16 @@ impl Session {
             self.status.store(5, Ordering::SeqCst);
         }
         Ok(())
+    }
+}
+
+impl fmt::Debug for Session {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Session")
+            .field("id", &self.id)
+            .field("status", &self.status)
+            .field("data", &self.data)
+            .field("config", &self.config)
+            .finish()
     }
 }

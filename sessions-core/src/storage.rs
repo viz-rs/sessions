@@ -2,6 +2,7 @@ use std::{fmt::Debug, time::Duration};
 
 use crate::{async_trait, Data, Result};
 
+/// A Storage Trait
 #[async_trait]
 pub trait Storage: Debug + Send + Sync + 'static {
     /// Get a data from storage by the key
