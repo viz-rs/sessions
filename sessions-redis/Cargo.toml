@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "Sessions Redis Storage"
 documentation = "https://docs.rs/sessions-redis"
+homepage = "https://github.com/viz-rs/sessions"
 license = "Apache-2.0/MIT"
+readme = "README.md"
 edition = "2018"
 
 [features]
