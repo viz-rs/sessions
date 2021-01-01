@@ -44,7 +44,7 @@ use sessions::*;
 let config = Arc::new(Config {
   cookie: CookieOptions::new(),
   storage: Arc::new(MemoryStorage::default()),
-  //storage: Arc::new(middleware::session::RedisStorage::new(RedisClient::open("redis://127.0.0.1")?)),
+  //storage: Arc::new(RedisStorage::new(RedisClient::open("redis://127.0.0.1")?)),
   generate: Box::new(|| nanoid::nanoid!(32)),
   verify: Box::new(|sid: &str| sid.len() == 32),
 });
