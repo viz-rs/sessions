@@ -3,6 +3,7 @@ name = "sessions"
 version = "0.1.0"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "General sessions module for web services"
+documentation = "https://docs.rs/sessions"
 license = "Apache-2.0/MIT"
 edition = "2018"
 

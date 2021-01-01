@@ -3,6 +3,7 @@ name = "sessions-memory"
 version = "0.1.0"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "Sessions Memory Storage"
+documentation = "https://docs.rs/sessions-memory"
 license = "Apache-2.0/MIT"
 edition = "2018"
 

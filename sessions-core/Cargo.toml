@@ -3,6 +3,7 @@ name = "sessions-core"
 version = "0.1.0"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "Sessions Core"
+documentation = "https://docs.rs/sessions-core"
 license = "Apache-2.0/MIT"
 edition = "2018"
 
