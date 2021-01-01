@@ -31,6 +31,33 @@
 
 - Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on _serde_json_
 
+### Example
+
+```toml
+sessions = { version = "0.1", features = ["memory"] }
+```
+
+```rust
+use std::sync::Arc;
+use sessions::*;
+
+let config = Arc::new(Config {
+  cookie: CookieOptions::new(),
+  storage: Arc::new(MemoryStorage::default()),
+  //storage: Arc::new(middleware::session::RedisStorage::new(RedisClient::open("redis://127.0.0.1")?)),
+  generate: Box::new(|| nanoid::nanoid!(32)),
+  verify: Box::new(|sid: &str| sid.len() == 32),
+});
+
+
+let session = Session::new(&config.generate(), 1, config.clone());
+session.set::<String>("crate", "sessions".to_string());
+let val: Option<String> = session.get("crate");
+session.remove("crate");
+session.clear();
+session.save().await;
+```
+
 ### Storages
 
 - [x] Memory
@@ -43,11 +70,15 @@
 
 ## License
 
-This project is licensed under either of
+<sup>
+Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
+2.0</a> or <a href="LICENSE-MIT">MIT license</a> at your option.
+</sup>
 
-- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
-  http://www.apache.org/licenses/LICENSE-2.0)
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or
-  http://opensource.org/licenses/MIT)
+<br>
 
-at your option.
+<sub>
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this crate by you, as defined in the Apache-2.0 license, shall
+be dual licensed as above, without any additional terms or conditions.
+</sub>
