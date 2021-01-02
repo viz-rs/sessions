@@ -33,9 +33,12 @@ impl MemoryStorage {
 #[async_trait]
 impl Storage for MemoryStorage {
     async fn get(&self, key: &str) -> Result<Option<Data>> {
-        if let Some(State(time, data)) = self.read()?.get(key).cloned() {
+        let state = self.read()?.get(key).cloned();
+        if let Some(State(time, data)) = state {
             if time >= Instant::now() {
                 return Ok(Some(data));
+            } else {
+                self.remove(key).await?;
             }
         }
 
