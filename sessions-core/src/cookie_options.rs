@@ -7,14 +7,14 @@ use cookie::SameSite;
 pub struct CookieOptions {
     /// Cookie's name, `viz.sid` by defaults
     pub name: String,
+    /// Cookie's path
+    pub path: String,
     /// Cookie's maximum age, `24H` by defaults
     pub max_age: Duration,
-    /// Cookie's domain
-    pub domain: Option<String>,
-    /// Cookie's path
-    pub path: Option<String>,
     /// Cookie's secure
     pub secure: Option<bool>,
+    /// Cookie's domain
+    pub domain: Option<String>,
     /// Cookie's http_only
     pub http_only: Option<bool>,
     /// Cookie's same_site
@@ -25,13 +25,13 @@ impl CookieOptions {
     /// Creates new `CookieOptions`
     pub fn new() -> Self {
         Self {
-            name: "viz.sid".into(),
-            max_age: Duration::from_secs(3600 * 24),
             domain: None,
-            path: None,
             secure: None,
             http_only: None,
             same_site: None,
+            path: "/".into(),
+            name: "viz.sid".into(),
+            max_age: Duration::from_secs(3600 * 24),
         }
     }
 
@@ -55,7 +55,7 @@ impl CookieOptions {
 
     /// Creates new `CookieOptions` with `path`
     pub fn with_path(mut self, path: String) -> Self {
-        self.path.replace(path);
+        self.path = path;
         self
     }
 

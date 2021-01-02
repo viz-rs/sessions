@@ -1,12 +1,12 @@
 [package]
 name = "sessions-sled"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "Sessions Sled Storage"
 license = "Apache-2.0/MIT"
 edition = "2018"
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.1.5" }
+sessions-core = { path = "../sessions-core", version = "0.1.6" }
 
 sled = "0.34"
