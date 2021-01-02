@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use cookie::SameSite;
+
 /// Cookie's Options
 #[derive(Debug)]
 pub struct CookieOptions {
@@ -16,7 +18,7 @@ pub struct CookieOptions {
     /// Cookie's http_only
     pub http_only: Option<bool>,
     /// Cookie's same_site
-    pub same_site: Option<String>,
+    pub same_site: Option<SameSite>,
 }
 
 impl CookieOptions {
@@ -70,7 +72,7 @@ impl CookieOptions {
     }
 
     /// Creates new `CookieOptions` with `same_site`
-    pub fn with_same_site(mut self, same_site: String) -> Self {
+    pub fn with_same_site(mut self, same_site: SameSite) -> Self {
         self.same_site.replace(same_site);
         self
     }
