@@ -1,7 +1,7 @@
 use std::{
     fmt,
     sync::{
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, RwLock, RwLockReadGuard, RwLockWriteGuard,
     },
     time::Duration,
@@ -18,9 +18,13 @@ use crate::{
 pub struct Session {
     /// Session's id
     pub id: String,
-    /// Session's status
+    /// Session's status, 0: inited, 1: saved, 2: renewed, 3: destroyed
     pub status: Arc<AtomicUsize>,
+    /// Session's Data status, false: unchanged, true: changed
+    data_status: Arc<AtomicBool>,
+    /// Session's Data
     data: Arc<RwLock<Data>>,
+    /// Session's Config
     config: Arc<Config>,
 }
 
@@ -30,7 +34,8 @@ impl Session {
         Self {
             config,
             id: id.into(),
-            data: Default::default(),
+            data: Arc::new(RwLock::new(Data::new())),
+            data_status: Arc::new(AtomicBool::new(false)),
             status: Arc::new(AtomicUsize::new(status)),
         }
     }
@@ -55,6 +60,11 @@ impl Session {
         self.id.clone()
     }
 
+    /// Gets the session data status
+    pub fn data_status(&self) -> bool {
+        self.data_status.load(Ordering::Relaxed)
+    }
+
     /// Gets the session status
     pub fn status(&self) -> usize {
         self.status.load(Ordering::Relaxed)
@@ -71,31 +81,27 @@ impl Session {
             .data_mut()
             .ok()?
             .insert(key.into(), to_value(val).ok()?);
-
-        self.status.store(2, Ordering::SeqCst);
-
+        self.data_status.store(true, Ordering::SeqCst);
         from_value(prev?).ok()
     }
 
     /// Removes a value
     pub fn remove<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
         let prev = self.data_mut().ok()?.remove(key)?;
-
-        self.status.store(2, Ordering::SeqCst);
-
+        self.data_status.store(true, Ordering::SeqCst);
         from_value(prev).ok()
     }
 
     /// Clears the state
     pub fn clear(&self) -> Result<()> {
         self.data_mut()?.clear();
-        self.status.store(2, Ordering::SeqCst);
+        self.data_status.store(true, Ordering::SeqCst);
         Ok(())
     }
 
     /// Saves the current state to the store
     pub async fn save(&self) -> Result<()> {
-        if self.status.compare_and_swap(2, 3, Ordering::SeqCst) == 2 {
+        if self.status.compare_and_swap(0, 1, Ordering::SeqCst) == 0 {
             let data = self.data()?.clone();
             self.config.set(&self.id, data, self.max_age()).await?;
         }
@@ -104,20 +110,20 @@ impl Session {
 
     /// Renews the new state
     pub async fn renew(&mut self) -> Result<()> {
-        if self.status.load(Ordering::Relaxed) < 4 {
+        if self.status.load(Ordering::Relaxed) < 2 {
             self.config.remove(&self.id).await?;
             self.id = self.config.generate();
             self.data_mut()?.clear();
-            self.status.store(4, Ordering::SeqCst);
+            self.status.store(2, Ordering::SeqCst);
         }
         Ok(())
     }
 
     /// Destroys the current state from store
     pub async fn destroy(&self) -> Result<()> {
-        if self.status.load(Ordering::Relaxed) < 5 {
+        if self.status.load(Ordering::Relaxed) < 3 {
             self.config.remove(&self.id).await?;
-            self.status.store(5, Ordering::SeqCst);
+            self.status.store(3, Ordering::SeqCst);
         }
         Ok(())
     }
