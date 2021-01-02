@@ -16,16 +16,14 @@ use crate::{
 /// Session
 #[derive(Clone)]
 pub struct Session {
-    /// Session's id
-    pub id: String,
-    /// Session's status, 0: inited, 1: saved, 2: renewed, 3: destroyed
-    pub status: Arc<AtomicUsize>,
-    /// Session's Data status, false: unchanged, true: changed
-    data_status: Arc<AtomicBool>,
-    /// Session's Data
-    data: Arc<RwLock<Data>>,
     /// Session's Config
     config: Arc<Config>,
+    /// Session's status, 0: inited, 1: saved, 2: renewed, 3: destroyed
+    status: Arc<AtomicUsize>,
+    /// Session's Data status, false: unchanged, true: changed
+    data_status: Arc<AtomicBool>,
+    /// Session's `SessionBeer`
+    beer: Arc<RwLock<SessionBeer>>,
 }
 
 impl Session {
@@ -33,10 +31,12 @@ impl Session {
     pub fn new(id: &str, status: usize, config: Arc<Config>) -> Self {
         Self {
             config,
-            id: id.into(),
-            data: Arc::new(RwLock::new(Data::new())),
-            data_status: Arc::new(AtomicBool::new(false)),
             status: Arc::new(AtomicUsize::new(status)),
+            data_status: Arc::new(AtomicBool::new(false)),
+            beer: Arc::new(RwLock::new(SessionBeer {
+                id: id.into(),
+                data: Data::new(),
+            })),
         }
     }
 
@@ -45,19 +45,36 @@ impl Session {
         self.config.max_age()
     }
 
+    /// Reads the session beer
+    pub fn beer(&self) -> Result<RwLockReadGuard<'_, SessionBeer>> {
+        self.beer.read().map_err(|e| anyhow!(e.to_string()))
+    }
+
+    /// Writes the session beer
+    pub fn beer_mut(&self) -> Result<RwLockWriteGuard<'_, SessionBeer>> {
+        self.beer.write().map_err(|e| anyhow!(e.to_string()))
+    }
+
     /// Reads the session state
-    pub fn data(&self) -> Result<RwLockReadGuard<'_, Data>> {
-        self.data.read().map_err(|e| anyhow!(e.to_string()))
+    pub fn data(&self) -> Result<Data> {
+        Ok(self.beer()?.data.clone())
     }
 
     /// Writes the session state
-    pub fn data_mut(&self) -> Result<RwLockWriteGuard<'_, Data>> {
-        self.data.write().map_err(|e| anyhow!(e.to_string()))
+    pub fn set_data(&self, data: Data) -> Result<()> {
+        self.beer_mut()?.data = data;
+        Ok(())
     }
 
     /// Gets the session id
-    pub fn id(&self) -> String {
-        self.id.clone()
+    pub fn id(&self) -> Result<String> {
+        Ok(self.beer()?.id.clone())
+    }
+
+    /// Gets the session id
+    pub fn set_id(&self, id: &str) -> Result<()> {
+        self.beer_mut()?.id = id.into();
+        Ok(())
     }
 
     /// Gets the session data status
@@ -78,8 +95,9 @@ impl Session {
     /// Sets a value by the key
     pub fn set<T: DeserializeOwned + Serialize>(&self, key: &str, val: T) -> Option<T> {
         let prev = self
-            .data_mut()
+            .beer_mut()
             .ok()?
+            .data
             .insert(key.into(), to_value(val).ok()?);
         self.data_status.store(true, Ordering::SeqCst);
         from_value(prev?).ok()
@@ -87,14 +105,14 @@ impl Session {
 
     /// Removes a value
     pub fn remove<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
-        let prev = self.data_mut().ok()?.remove(key)?;
+        let prev = self.beer_mut().ok()?.data.remove(key)?;
         self.data_status.store(true, Ordering::SeqCst);
         from_value(prev).ok()
     }
 
     /// Clears the state
     pub fn clear(&self) -> Result<()> {
-        self.data_mut()?.clear();
+        self.beer_mut()?.data.clear();
         self.data_status.store(true, Ordering::SeqCst);
         Ok(())
     }
@@ -102,8 +120,9 @@ impl Session {
     /// Saves the current state to the store
     pub async fn save(&self) -> Result<()> {
         if self.status.compare_and_swap(0, 1, Ordering::SeqCst) == 0 {
-            let data = self.data()?.clone();
-            self.config.set(&self.id, data, self.max_age()).await?;
+            self.config
+                .set(&self.id()?, self.data()?.clone(), self.max_age())
+                .await?;
         }
         Ok(())
     }
@@ -111,9 +130,12 @@ impl Session {
     /// Renews the new state
     pub async fn renew(&mut self) -> Result<()> {
         if self.status.load(Ordering::Relaxed) < 2 {
-            self.config.remove(&self.id).await?;
-            self.id = self.config.generate();
-            self.data_mut()?.clear();
+            self.config.remove(&self.id()?).await?;
+            self.beer_mut()?.data.clear();
+            self.set_id(&self.config.generate())?;
+            self.config
+                .set(&self.id()?, self.data()?, self.max_age())
+                .await?;
             self.status.store(2, Ordering::SeqCst);
         }
         Ok(())
@@ -122,7 +144,7 @@ impl Session {
     /// Destroys the current state from store
     pub async fn destroy(&self) -> Result<()> {
         if self.status.load(Ordering::Relaxed) < 3 {
-            self.config.remove(&self.id).await?;
+            self.config.remove(&self.id()?).await?;
             self.status.store(3, Ordering::SeqCst);
         }
         Ok(())
@@ -132,10 +154,19 @@ impl Session {
 impl fmt::Debug for Session {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Session")
-            .field("id", &self.id)
             .field("status", &self.status)
-            .field("data", &self.data)
+            .field("data_status", &self.data_status)
+            .field("beer", &self.beer)
             .field("config", &self.config)
             .finish()
     }
+}
+
+/// A Session Beer
+#[derive(Debug, Clone, Default)]
+pub struct SessionBeer {
+    /// Session's id
+    pub id: String,
+    /// Session's Data
+    pub data: Data,
 }

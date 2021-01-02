@@ -1,6 +1,6 @@
 [package]
 name = "sessions-core"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "Sessions Core"
 documentation = "https://docs.rs/sessions-core"
