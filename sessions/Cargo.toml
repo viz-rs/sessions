@@ -1,6 +1,6 @@
 [package]
 name = "sessions"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "General sessions module for web services"
 documentation = "https://docs.rs/sessions"
@@ -14,6 +14,6 @@ memory = ["sessions-memory"]
 redis = ["sessions-redis"]
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.1.1" }
-sessions-memory = { path = "../sessions-memory", version = "0.1.1", optional = true }
-sessions-redis = { path = "../sessions-redis", version = "0.1.1", optional = true }
+sessions-core = { path = "../sessions-core", version = "0.1.2" }
+sessions-memory = { path = "../sessions-memory", version = "0.1.2", optional = true }
+sessions-redis = { path = "../sessions-redis", version = "0.1.2", optional = true }

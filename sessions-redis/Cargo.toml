@@ -1,6 +1,6 @@
 [package]
 name = "sessions-redis"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["FangDun Sai <cfddream@gmail.com>"]
 description = "Sessions Redis Storage"
 documentation = "https://docs.rs/sessions-redis"
@@ -16,7 +16,7 @@ tokio-comp = ["redis/tokio-comp"]
 async-std-comp = ["redis/async-std-comp"]
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.1.1" }
+sessions-core = { path = "../sessions-core", version = "0.1.2" }
 
 redis = { version = "0.19", features = ["aio"] }
 serde_json = "1.0"
