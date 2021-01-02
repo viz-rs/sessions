@@ -18,7 +18,7 @@ pub struct Session {
     /// Session's id
     pub id: String,
     /// Session's status
-    pub status: AtomicUsize,
+    pub status: Arc<AtomicUsize>,
     data: Arc<RwLock<Data>>,
     config: Arc<Config>,
 }
@@ -27,10 +27,10 @@ impl Session {
     /// Creates new `Session` with `id` `status` and `Config`
     pub fn new(id: &str, status: usize, config: Arc<Config>) -> Self {
         Self {
-            id: id.to_string(),
-            status: status.into(),
-            data: Default::default(),
             config,
+            id: id.into(),
+            data: Default::default(),
+            status: Arc::new(AtomicUsize::new(status)),
         }
     }
 
@@ -69,7 +69,7 @@ impl Session {
         let prev = self
             .data_mut()
             .ok()?
-            .insert(key.to_string(), to_value(val).ok()?);
+            .insert(key.into(), to_value(val).ok()?);
 
         self.status.store(2, Ordering::SeqCst);
 

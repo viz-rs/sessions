@@ -23,7 +23,7 @@ impl CookieOptions {
     /// Creates new `CookieOptions`
     pub fn new() -> Self {
         Self {
-            name: "viz.sid".to_string(),
+            name: "viz.sid".into(),
             max_age: Duration::from_secs(3600 * 24),
             domain: None,
             path: None,
