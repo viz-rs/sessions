@@ -55,7 +55,10 @@ session.set::<String>("crate", "sessions".to_string());
 let val: Option<String> = session.get("crate");
 session.remove("crate");
 session.clear();
+
 session.save().await;
+session.renew().await;
+session.destroy().await;
 ```
 
 ### Storages
