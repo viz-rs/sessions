@@ -14,6 +14,7 @@ use crate::{
 };
 
 /// Session
+#[derive(Clone)]
 pub struct Session {
     /// Session's id
     pub id: String,
