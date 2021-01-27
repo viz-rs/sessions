@@ -1,7 +1,7 @@
 [package]
 name = "sessions"
 version = "0.1.6"
-authors = ["FangDun Sai <cfddream@gmail.com>"]
+authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "General sessions module for web services"
 documentation = "https://docs.rs/sessions"
 homepage = "https://github.com/viz-rs/sessions"

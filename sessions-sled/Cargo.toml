@@ -1,7 +1,7 @@
 [package]
 name = "sessions-sled"
 version = "0.1.6"
-authors = ["FangDun Sai <cfddream@gmail.com>"]
+authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "Sessions Sled Storage"
 license = "Apache-2.0/MIT"
 edition = "2018"

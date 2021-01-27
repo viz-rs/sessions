@@ -1,7 +1,7 @@
 [package]
 name = "sessions-redis"
 version = "0.1.6"
-authors = ["FangDun Sai <cfddream@gmail.com>"]
+authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "Sessions Redis Storage"
 documentation = "https://docs.rs/sessions-redis"
 homepage = "https://github.com/viz-rs/sessions"
