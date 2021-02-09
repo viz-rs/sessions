@@ -11,3 +11,8 @@ edition = "2018"
 
 [dependencies]
 sessions-core = { path = "../sessions-core", version = "0.1.6" }
+
+[dev-dependencies]
+anyhow = "1.0"
+futures-executor = "0.3"
+nanoid = "0.3"
