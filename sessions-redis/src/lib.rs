@@ -2,9 +2,11 @@ use std::time::Duration;
 
 use sessions_core::{anyhow, async_trait, Data, Result, Storage};
 
-use redis::{aio::Connection, AsyncCommands, Client};
+use redis::{aio::Connection, AsyncCommands};
 
-#[derive(Debug)]
+pub use redis::Client;
+
+#[derive(Clone, Debug)]
 pub struct RedisStorage {
     inner: Client,
 }

@@ -53,14 +53,14 @@ use sessions::*;
 
 let config = Arc::new(Config {
   cookie: CookieOptions::new(),
-  storage: Arc::new(MemoryStorage::default()),
+  storage: Arc::new(MemoryStorage::new()),
   //storage: Arc::new(RedisStorage::new(RedisClient::open("redis://127.0.0.1")?)),
   generate: Box::new(|| nanoid::nanoid!(32)),
   verify: Box::new(|sid: &str| sid.len() == 32),
 });
 
 
-let session = Session::new(&config.generate(), 1, config.clone());
+let session = Session::new(&config.generate(), 0, config.clone());
 session.set::<String>("crate", "sessions".to_string());
 let val: Option<String> = session.get("crate");
 session.remove("crate");

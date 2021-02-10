@@ -11,9 +11,20 @@ edition = "2018"
 
 [features]
 memory = ["sessions-memory"]
-redis = ["sessions-redis"]
+redis = ["tokio-redis"]
+
+tokio-redis = ["sessions-redis", "sessions-redis/tokio-comp"]
+async-std-redis = ["sessions-redis", "sessions-redis/async-std-comp"]
 
 [dependencies]
 sessions-core = { path = "../sessions-core", version = "0.1.6" }
 sessions-memory = { path = "../sessions-memory", version = "0.1.6", optional = true }
 sessions-redis = { path = "../sessions-redis", version = "0.1.6", optional = true }
+tokio = "1.2.0"
+
+[dev-dependencies]
+anyhow = "1.0"
+nanoid = "0.3"
+
+futures-executor = "0.3"
+tokio = { version = "1.0", default-features = false, features = ["macros"] }

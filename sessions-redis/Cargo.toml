@@ -18,5 +18,5 @@ async-std-comp = ["redis/async-std-comp"]
 [dependencies]
 sessions-core = { path = "../sessions-core", version = "0.1.6" }
 
-redis = { version = "0.19", features = ["aio"] }
 serde_json = "1.0"
+redis = { version = "0.19", features = ["aio"] }
