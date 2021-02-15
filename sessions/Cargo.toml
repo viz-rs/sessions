@@ -1,6 +1,6 @@
 [package]
 name = "sessions"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "General sessions module for web services"
 documentation = "https://docs.rs/sessions"
@@ -17,10 +17,9 @@ tokio-redis = ["sessions-redis", "sessions-redis/tokio-comp"]
 async-std-redis = ["sessions-redis", "sessions-redis/async-std-comp"]
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.1.6" }
-sessions-memory = { path = "../sessions-memory", version = "0.1.6", optional = true }
-sessions-redis = { path = "../sessions-redis", version = "0.1.6", optional = true }
-tokio = "1.2.0"
+sessions-core = { path = "../sessions-core", version = "0.1.7" }
+sessions-memory = { path = "../sessions-memory", version = "0.1.7", optional = true }
+sessions-redis = { path = "../sessions-redis", version = "0.1.7", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0"
