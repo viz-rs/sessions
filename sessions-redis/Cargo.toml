@@ -1,6 +1,6 @@
 [package]
 name = "sessions-redis"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "Sessions Redis Storage"
 documentation = "https://docs.rs/sessions-redis"
@@ -10,13 +10,13 @@ readme = "README.md"
 edition = "2018"
 
 [features]
-default = ["tokio-comp"]
+default = []
 
 tokio-comp = ["redis/tokio-comp"]
 async-std-comp = ["redis/async-std-comp"]
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.1.6" }
+sessions-core = { path = "../sessions-core", version = "0.1.7" }
 
 serde_json = "1.0"
-redis = { version = "0.19", features = ["aio"] }
+redis = { version = "0.20", default-features = false, features = ["aio"] }
