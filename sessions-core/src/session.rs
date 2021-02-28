@@ -119,7 +119,7 @@ impl Session {
 
     /// Saves the current state to the store
     pub async fn save(&self) -> Result<()> {
-        if self.status.compare_exchange(0, 1, Ordering::SeqCst, Ordering::SeqCst) == Ok(0) {
+        if self.status.fetch_add(1, Ordering::SeqCst) == 0 {
             self.config
                 .set(&self.id()?, self.data()?.clone(), self.max_age())
                 .await?;
