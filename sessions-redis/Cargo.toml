@@ -10,10 +10,10 @@ readme = "README.md"
 edition = "2018"
 
 [features]
-default = []
+default = ["redis/aio"]
 
-tokio-comp = ["redis/aio", "redis/tokio-comp"]
-async-std-comp = ["redis/aio", "redis/async-std-comp"]
+tokio-comp = ["redis/tokio-comp"]
+async-std-comp = ["redis/async-std-comp"]
 
 [dependencies]
 sessions-core = { path = "../sessions-core", version = "0.1.9" }
