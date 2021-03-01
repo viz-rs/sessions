@@ -19,4 +19,4 @@ async-std-comp = ["redis/aio", "redis/async-std-comp"]
 sessions-core = { path = "../sessions-core", version = "0.1.8" }
 
 serde_json = "1.0"
-redis = { version = "0.20", default-features = false, optional = true }
+redis = { version = "0.20", default-features = false }
