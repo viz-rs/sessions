@@ -54,6 +54,7 @@ impl Storage for MemoryStorage {
     }
 
     async fn reset(&self) -> Result<()> {
-        Ok(self.write()?.clear())
+        self.write()?.clear();
+        Ok(())
     }
 }

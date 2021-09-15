@@ -4,4 +4,4 @@ pub use sessions_core::*;
 pub use sessions_memory::MemoryStorage;
 
 #[cfg(feature = "redis")]
-pub use sessions_redis::{RedisStorage, Client as RedisClient};
+pub use sessions_redis::{Client as RedisClient, RedisStorage};

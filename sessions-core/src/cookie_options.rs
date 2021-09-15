@@ -77,3 +77,9 @@ impl CookieOptions {
         self
     }
 }
+
+impl Default for CookieOptions {
+    fn default() -> Self {
+        Self::new()
+    }
+}

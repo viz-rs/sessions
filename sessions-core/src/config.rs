@@ -3,18 +3,22 @@ use std::{fmt, sync::Arc, time::Duration};
 use crate::{async_trait, CookieOptions, Data, Result, Storage};
 
 /// Sessions Config
-pub struct Config {
+pub struct Config<G, V> {
     /// Cookie Options
     pub cookie: CookieOptions,
     /// Current Storage
     pub storage: Arc<dyn Storage>,
     /// Generates session id
-    pub generate: Box<dyn GenerateFn>,
+    pub generate: G,
     /// Verifes session id
-    pub verify: Box<dyn VerifyFn>,
+    pub verify: V,
 }
 
-impl Config {
+impl<G, V> Config<G, V>
+where
+    G: Send + Sync + 'static + Fn() -> String,
+    V: Send + Sync + 'static + Fn(&str) -> bool,
+{
     /// Gets current storage
     pub fn storage(&self) -> Arc<dyn Storage> {
         self.storage.clone()
@@ -32,17 +36,30 @@ impl Config {
 
     /// Generates a session id
     pub fn generate(&self) -> String {
-        self.generate.call()
+        (self.generate)()
     }
 
     /// Verifes a session id
     pub fn verify(&self, key: &str) -> bool {
-        self.verify.call(key)
+        (self.verify)(key)
+    }
+}
+
+impl<G, V> fmt::Debug for Config<G, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Config")
+            .field("cookie", &self.cookie)
+            .field("storage", &self.storage)
+            .finish()
     }
 }
 
 #[async_trait]
-impl Storage for Config {
+impl<G, V> Storage for Config<G, V>
+where
+    G: Send + Sync + 'static + Fn() -> String,
+    V: Send + Sync + 'static + Fn(&str) -> bool,
+{
     /// Get a data from storage by the key
     async fn get(&self, key: &str) -> Result<Option<Data>> {
         self.storage.get(key).await
@@ -66,52 +83,5 @@ impl Storage for Config {
     /// Close the connection
     async fn close(&self) -> Result<()> {
         self.storage.close().await
-    }
-}
-
-impl fmt::Debug for Config {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Config")
-            .field("cookie", &self.cookie)
-            .field("storage", &self.storage)
-            .finish()
-    }
-}
-
-/// A trait for generating session id
-pub trait GenerateFn
-where
-    Self: Send + Sync + 'static,
-{
-    #[allow(missing_docs)]
-    #[must_use]
-    fn call(&self) -> String;
-}
-
-/// A trait for verifing session id
-pub trait VerifyFn
-where
-    Self: Send + Sync + 'static,
-{
-    #[allow(missing_docs)]
-    #[must_use]
-    fn call(&self, key: &str) -> bool;
-}
-
-impl<F> GenerateFn for F
-where
-    F: Send + Sync + 'static + Fn() -> String,
-{
-    fn call(&self) -> String {
-        (self)()
-    }
-}
-
-impl<F> VerifyFn for F
-where
-    F: Send + Sync + 'static + Fn(&str) -> bool,
-{
-    fn call(&self, key: &str) -> bool {
-        (self)(key)
     }
 }

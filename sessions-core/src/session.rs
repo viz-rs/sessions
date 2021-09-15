@@ -15,9 +15,9 @@ use crate::{
 
 /// Session
 #[derive(Clone)]
-pub struct Session {
+pub struct Session<G, V> {
     /// Session's Config
-    config: Arc<Config>,
+    config: Arc<Config<G, V>>,
     /// Session's status, 0: inited, 1: saved, 2: renewed, 3: destroyed
     status: Arc<AtomicUsize>,
     /// Session's Data status, false: unchanged, true: changed
@@ -26,9 +26,13 @@ pub struct Session {
     beer: Arc<RwLock<SessionBeer>>,
 }
 
-impl Session {
+impl<G, V> Session<G, V>
+where
+    G: Send + Sync + 'static + Fn() -> String,
+    V: Send + Sync + 'static + Fn(&str) -> bool,
+{
     /// Creates new `Session` with `id` `status` and `Config`
-    pub fn new(id: &str, status: usize, config: Arc<Config>) -> Self {
+    pub fn new(id: &str, status: usize, config: Arc<Config<G, V>>) -> Self {
         Self {
             config,
             status: Arc::new(AtomicUsize::new(status)),
@@ -151,7 +155,7 @@ impl Session {
     }
 }
 
-impl fmt::Debug for Session {
+impl<G, V> fmt::Debug for Session<G, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Session")
             .field("status", &self.status)

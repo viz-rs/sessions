@@ -1,6 +1,6 @@
 [package]
 name = "sessions-memory"
-version = "0.1.9"
+version = "0.2.0"
 authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "Sessions Memory Storage"
 documentation = "https://docs.rs/sessions-memory"
@@ -10,4 +10,4 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.1.9" }
+sessions-core = { path = "../sessions-core", version = "0.2.0" }

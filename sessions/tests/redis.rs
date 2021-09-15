@@ -13,8 +13,8 @@ async fn redis() -> Result<()> {
     let config = Arc::new(Config {
         cookie: CookieOptions::new(),
         storage: storage.clone(),
-        generate: Box::new(|| nanoid::nanoid!(32)),
-        verify: Box::new(|sid: &str| sid.len() == 32),
+        generate: || nano_id::base64(32),
+        verify: |sid: &str| sid.len() == 32,
     });
 
     let id = config.generate();

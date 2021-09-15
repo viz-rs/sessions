@@ -6,7 +6,7 @@ use std::{
 
 use sessions_core::{anyhow, async_trait, Data, Result, Storage};
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 struct State(Instant, Data);
 
 impl State {
@@ -15,14 +15,16 @@ impl State {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct MemoryStorage {
     inner: Arc<RwLock<HashMap<String, State>>>,
 }
 
 impl MemoryStorage {
     pub fn new() -> Self {
-        Self { inner: Arc::default() }
+        Self {
+            inner: Arc::default(),
+        }
     }
 
     fn read(&self) -> Result<RwLockReadGuard<'_, HashMap<String, State>>> {
@@ -61,6 +63,7 @@ impl Storage for MemoryStorage {
     }
 
     async fn reset(&self) -> Result<()> {
-        Ok(self.write()?.clear())
+        self.write()?.clear();
+        Ok(())
     }
 }
