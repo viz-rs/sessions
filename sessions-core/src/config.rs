@@ -3,22 +3,18 @@ use std::{fmt, sync::Arc, time::Duration};
 use crate::{async_trait, CookieOptions, Data, Result, Storage};
 
 /// Sessions Config
-pub struct Config<G, V> {
+pub struct Config {
     /// Cookie Options
     pub cookie: CookieOptions,
     /// Current Storage
     pub storage: Arc<dyn Storage>,
     /// Generates session id
-    pub generate: G,
+    pub generate: Box<dyn Send + Sync + 'static + Fn() -> String>,
     /// Verifes session id
-    pub verify: V,
+    pub verify: Box<dyn Send + Sync + 'static + Fn(&str) -> bool>,
 }
 
-impl<G, V> Config<G, V>
-where
-    G: Send + Sync + 'static + Fn() -> String,
-    V: Send + Sync + 'static + Fn(&str) -> bool,
-{
+impl Config {
     /// Gets current storage
     pub fn storage(&self) -> Arc<dyn Storage> {
         self.storage.clone()
@@ -45,7 +41,7 @@ where
     }
 }
 
-impl<G, V> fmt::Debug for Config<G, V> {
+impl fmt::Debug for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Config")
             .field("cookie", &self.cookie)
@@ -55,11 +51,7 @@ impl<G, V> fmt::Debug for Config<G, V> {
 }
 
 #[async_trait]
-impl<G, V> Storage for Config<G, V>
-where
-    G: Send + Sync + 'static + Fn() -> String,
-    V: Send + Sync + 'static + Fn(&str) -> bool,
-{
+impl Storage for Config {
     /// Get a data from storage by the key
     async fn get(&self, key: &str) -> Result<Option<Data>> {
         self.storage.get(key).await

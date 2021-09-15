@@ -10,11 +10,19 @@ use sessions::*;
 async fn redis() -> Result<()> {
     let storage = Arc::new(RedisStorage::new(RedisClient::open("redis://127.0.0.1")?));
 
+    fn generate() -> String {
+        nano_id::base64(32)
+    }
+
+    fn verify(sid: &str) -> bool {
+        sid.len() == 32
+    }
+
     let config = Arc::new(Config {
         cookie: CookieOptions::new(),
         storage: storage.clone(),
-        generate: || nano_id::base64(32),
-        verify: |sid: &str| sid.len() == 32,
+        generate: Box::new(generate),
+        verify: Box::new(verify),
     });
 
     let id = config.generate();
