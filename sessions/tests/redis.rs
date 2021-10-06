@@ -8,10 +8,12 @@ use sessions::*;
 
 #[tokio::test]
 async fn redis() -> Result<()> {
-    let storage = Arc::new(RedisStorage::new(RedisClient::open("redis://127.0.0.1")?));
+    let storage = Arc::new(RedisStorage::new(RedisClient::open(
+        "unix:///tmp/redis.sock",
+    )?));
 
     fn generate() -> String {
-        nano_id::base64(32)
+        nano_id::base64::<32>()
     }
 
     fn verify(sid: &str) -> bool {

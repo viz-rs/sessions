@@ -15,7 +15,7 @@ fn memory() -> Result<()> {
         let config = Arc::new(Config {
             cookie: CookieOptions::new(),
             storage: storage.clone(),
-            generate: Box::new(|| nano_id::base64(32)),
+            generate: Box::new(|| nano_id::base64::<32>()),
             verify: Box::new(|sid: &str| sid.len() == 32),
         });
 

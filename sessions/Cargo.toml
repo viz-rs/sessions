@@ -25,7 +25,7 @@ sessions-redis = { path = "../sessions-redis", version = "0.2.1", optional = tru
 
 [dev-dependencies]
 anyhow = "1.0"
-nano-id = "0.1"
+nano-id = "0.2"
 
 futures-executor = "0.3"
 tokio = { version = "1.0", features = ["macros"] }
