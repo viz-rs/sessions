@@ -10,11 +10,9 @@ use sessions::*;
 #[test]
 fn memory() -> Result<()> {
     block_on(async {
-        let storage = Arc::new(MemoryStorage::new());
-
         let config = Arc::new(Config {
             cookie: CookieOptions::new(),
-            storage: storage.clone(),
+            storage: MemoryStorage::new(),
             generate: Box::new(|| nano_id::base64::<32>()),
             verify: Box::new(|sid: &str| sid.len() == 32),
         });
@@ -42,7 +40,7 @@ fn memory() -> Result<()> {
 
         let mut session = Session::new(&id, 0, config.clone());
 
-        if let Some(data) = storage.get(&id).await? {
+        if let Some(data) = config.get(&id).await? {
             session.set_data(data)?;
         }
 

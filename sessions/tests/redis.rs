@@ -8,10 +8,6 @@ use sessions::*;
 
 #[tokio::test]
 async fn redis() -> Result<()> {
-    let storage = Arc::new(RedisStorage::new(RedisClient::open(
-        "unix:///tmp/redis.sock",
-    )?));
-
     fn generate() -> String {
         nano_id::base64::<32>()
     }
@@ -22,7 +18,7 @@ async fn redis() -> Result<()> {
 
     let config = Arc::new(Config {
         cookie: CookieOptions::new(),
-        storage: storage.clone(),
+        storage: RedisStorage::new(RedisClient::open("unix:///tmp/redis.sock")?),
         generate: Box::new(generate),
         verify: Box::new(verify),
     });
@@ -50,7 +46,7 @@ async fn redis() -> Result<()> {
 
     let mut session = Session::new(&id, 0, config.clone());
 
-    if let Some(data) = storage.get(&id).await? {
+    if let Some(data) = config.get(&id).await? {
         session.set_data(data)?;
     }
 
