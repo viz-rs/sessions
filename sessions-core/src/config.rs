@@ -1,6 +1,6 @@
-use std::{fmt, time::Duration};
+use std::{fmt, ops::Deref, time::Duration};
 
-use crate::{async_trait, CookieOptions, Data, Result, Storage};
+use crate::{CookieOptions, Storage};
 
 /// Sessions Config
 pub struct Config<S: Storage> {
@@ -50,30 +50,16 @@ impl<S: Storage> fmt::Debug for Config<S> {
     }
 }
 
-#[async_trait]
-impl<S: Storage> Storage for Config<S> {
-    /// Get a data from storage by the key
-    async fn get(&self, key: &str) -> Result<Option<Data>> {
-        self.storage.get(key).await
+impl<S: Storage> AsRef<S> for Config<S> {
+    fn as_ref(&self) -> &S {
+        &self.storage
     }
+}
 
-    /// Set a data to storage by the key
-    async fn set(&self, key: &str, val: Data, exp: Duration) -> Result<()> {
-        self.storage.set(key, val, exp).await
-    }
+impl<S: Storage> Deref for Config<S> {
+    type Target = S;
 
-    /// Remove a data from storage by the key
-    async fn remove(&self, key: &str) -> Result<()> {
-        self.storage.remove(key).await
-    }
-
-    /// Reset the storage and remove all keys
-    async fn reset(&self) -> Result<()> {
-        self.storage.reset().await
-    }
-
-    /// Close the connection
-    async fn close(&self) -> Result<()> {
-        self.storage.close().await
+    fn deref(&self) -> &S {
+        &self.storage
     }
 }
