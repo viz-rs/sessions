@@ -55,7 +55,7 @@ let config = Arc::new(Config {
   cookie: CookieOptions::new(),
   storage: MemoryStorage::new(),
   //storage: RedisStorage::new(RedisClient::open("redis://127.0.0.1")?),
-  generate: Box::new(|| nano_id::base64(32)),
+  generate: Box::new(nano_id::base64::<32>),
   verify: Box::new(|sid: &str| sid.len() == 32),
 });
 

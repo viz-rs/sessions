@@ -8,19 +8,11 @@ use sessions::*;
 
 #[tokio::test]
 async fn redis() -> Result<()> {
-    fn generate() -> String {
-        nano_id::base64::<32>()
-    }
-
-    fn verify(sid: &str) -> bool {
-        sid.len() == 32
-    }
-
     let config = Arc::new(Config {
         cookie: CookieOptions::new(),
         storage: RedisStorage::new(RedisClient::open("unix:///tmp/redis.sock")?),
-        generate: Box::new(generate),
-        verify: Box::new(verify),
+        generate: Box::new(nano_id::base64::<32>),
+        verify: Box::new(|sid| sid.len() == 32),
     });
 
     let id = config.generate();
