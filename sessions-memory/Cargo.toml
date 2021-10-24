@@ -5,9 +5,9 @@ authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "Sessions Memory Storage"
 documentation = "https://docs.rs/sessions-memory"
 homepage = "https://github.com/viz-rs/sessions"
-license = "Apache-2.0/MIT"
+license = "MIT OR Apache-2.0"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 sessions-core = { path = "../sessions-core", version = "0.2.3" }

@@ -5,9 +5,9 @@ authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "General sessions module for web services"
 documentation = "https://docs.rs/sessions"
 homepage = "https://github.com/viz-rs/sessions"
-license = "Apache-2.0/MIT"
+license = "MIT OR Apache-2.0"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 
 [features]
 default = []

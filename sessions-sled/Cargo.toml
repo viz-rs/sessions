@@ -3,8 +3,8 @@ name = "sessions-sled"
 version = "0.2.0"
 authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "Sessions Sled Storage"
-license = "Apache-2.0/MIT"
-edition = "2018"
+license = "MIT OR Apache-2.0"
+edition = "2021"
 publish = false
 
 [dependencies]
