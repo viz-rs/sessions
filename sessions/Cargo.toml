@@ -28,4 +28,4 @@ anyhow = "1.0"
 nano-id = "0.2"
 
 futures-executor = "0.3"
-tokio = { version = "1.18", features = ["macros"] }
+tokio = { version = "1.19", features = ["macros"] }
