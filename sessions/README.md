@@ -39,12 +39,12 @@
 
 - Easy custom Storages
 
-- Stores the values in a [`Map<String, Value>`](https://docs.rs/serde_json/latest/serde_json/map/index.html) based on _serde_json_
+- Stores the values in a `BTreeMap<String, Value>`
 
 ### Example
 
 ```toml
-sessions = { version = "0.2", features = ["memory"] }
+sessions = { version = "0.3", features = ["memory"] }
 ```
 
 ```rust
@@ -52,34 +52,29 @@ use std::sync::Arc;
 use sessions::*;
 
 let config = Arc::new(Config {
-  cookie: CookieOptions::new(),
   storage: MemoryStorage::new(),
-  //storage: RedisStorage::new(RedisClient::open("redis://127.0.0.1")?),
-  generate: Box::new(nano_id::base64::<32>),
-  verify: Box::new(|sid: &str| sid.len() == 32),
+  generate: nano_id::base64::<32>,
+  verify: |sid: &str| sid.len() == 32,
 });
 
 
-let session = Session::new(&config.generate(), 0, config.clone());
+let session = Session::new(Data::new());
 session.set::<String>("crate", "sessions".to_string());
 let val: Option<String> = session.get("crate");
 session.remove("crate");
 session.clear();
-
-session.save().await;
-session.renew().await;
-session.destroy().await;
 ```
 
 ### Storages
 
 - [x] Memory
 - [x] Redis
-- [ ] sled
+- [ ] SQLx
+  - [ ] SQLite
+  - [ ] PostgreSQL
+  - [ ] MySQL/MariaDB
 - [ ] Memcached
 - [ ] Mongodb
-- [ ] PostgreSQL
-- [ ] MySQL/MariaDB
 
 ## License
 
