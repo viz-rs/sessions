@@ -1,172 +1,149 @@
 use std::{
     fmt,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc, RwLock, RwLockReadGuard, RwLockWriteGuard,
+        atomic::{AtomicU8, Ordering},
+        Arc, RwLock,
     },
-    time::Duration,
 };
 
-use crate::{
-    anyhow,
-    data::{from_value, to_value, DeserializeOwned, Serialize},
-    Config, Data, Result, Storage,
-};
+use serde::{de::DeserializeOwned, Serialize};
+use serde_json::{from_value, to_value, Value};
+
+use crate::{Data, Error, CHANGED, PURGED, RENEWED, UNCHANGED};
+
+/// The Session State
+#[derive(Debug, Default)]
+struct SessionState {
+    status: AtomicU8,
+    data: RwLock<Data>,
+}
 
 /// Session
 #[derive(Clone)]
-pub struct Session<S: Storage> {
-    /// Session's Config
-    config: Arc<Config<S>>,
-    /// Session's status, 0: inited, 1: saved, 2: renewed, 3: destroyed
-    status: Arc<AtomicUsize>,
-    /// Session's Data status, false: unchanged, true: changed
-    data_status: Arc<AtomicBool>,
-    /// Session's `SessionBeer`
-    beer: Arc<RwLock<SessionBeer>>,
+pub struct Session {
+    state: Arc<SessionState>,
 }
 
-impl<S: Storage> Session<S> {
-    /// Creates new `Session` with `id` `status` and `Config`
-    pub fn new(id: &str, status: usize, config: Arc<Config<S>>) -> Self {
+impl Session {
+    /// Creates new `Session` with `Data`
+    pub fn new(data: Data) -> Self {
         Self {
-            config,
-            status: Arc::new(AtomicUsize::new(status)),
-            data_status: Arc::new(AtomicBool::new(false)),
-            beer: Arc::new(RwLock::new(SessionBeer {
-                id: id.into(),
-                data: Data::new(),
-            })),
+            state: Arc::new(SessionState {
+                status: AtomicU8::new(UNCHANGED),
+                data: RwLock::new(data),
+            }),
         }
     }
 
-    /// Reads the session expires or cookie max_age
-    pub fn max_age(&self) -> Duration {
-        self.config.max_age()
+    /// Gets status of the session
+    pub fn status(&self) -> &AtomicU8 {
+        &self.state.status
     }
 
-    /// Reads the session beer
-    pub fn beer(&self) -> Result<RwLockReadGuard<'_, SessionBeer>> {
-        self.beer.read().map_err(|e| anyhow!(e.to_string()))
-    }
-
-    /// Writes the session beer
-    pub fn beer_mut(&self) -> Result<RwLockWriteGuard<'_, SessionBeer>> {
-        self.beer.write().map_err(|e| anyhow!(e.to_string()))
-    }
-
-    /// Reads the session state
-    pub fn data(&self) -> Result<Data> {
-        Ok(self.beer()?.data.clone())
-    }
-
-    /// Writes the session state
-    pub fn set_data(&self, data: Data) -> Result<()> {
-        self.beer_mut()?.data = data;
-        Ok(())
-    }
-
-    /// Gets the session id
-    pub fn id(&self) -> Result<String> {
-        Ok(self.beer()?.id.clone())
-    }
-
-    /// Gets the session id
-    pub fn set_id(&self, id: &str) -> Result<()> {
-        self.beer_mut()?.id = id.into();
-        Ok(())
-    }
-
-    /// Gets the session data status
-    pub fn data_status(&self) -> bool {
-        self.data_status.load(Ordering::Relaxed)
-    }
-
-    /// Gets the session status
-    pub fn status(&self) -> usize {
-        self.status.load(Ordering::Relaxed)
+    /// Gets data of the session
+    pub fn data(&self) -> &RwLock<Data> {
+        &self.state.data
     }
 
     /// Gets a value by the key
-    pub fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
-        from_value(self.data().ok()?.get(key).cloned()?).ok()
+    pub fn get<T>(&self, key: &str) -> Result<Option<T>, Error>
+    where
+        T: DeserializeOwned,
+    {
+        match self
+            .data()
+            .read()
+            .map_err(|e| Error::RwLock(e.to_string()))?
+            .get(key)
+            .cloned()
+        {
+            Some(t) => from_value(t).map(Some).map_err(Error::Json),
+            None => Ok(None),
+        }
     }
 
     /// Sets a value by the key
-    pub fn set<T: DeserializeOwned + Serialize>(&self, key: &str, val: T) -> Option<T> {
-        let prev = self
-            .beer_mut()
-            .ok()?
-            .data
-            .insert(key.into(), to_value(val).ok()?);
-        self.data_status.store(true, Ordering::SeqCst);
-        from_value(prev?).ok()
+    pub fn set<T>(&self, key: &str, val: T) -> Result<(), Error>
+    where
+        T: Serialize,
+    {
+        let status = self.status().load(Ordering::Acquire);
+        // not allowed `PURGED`
+        if status != PURGED {
+            if let Ok(mut d) = self.data().write() {
+                // not allowed `RENEWED & CHANGED`
+                if status == UNCHANGED {
+                    self.status().store(CHANGED, Ordering::SeqCst);
+                }
+                d.insert(key.into(), to_value(val)?);
+            }
+        }
+        Ok(())
     }
 
     /// Removes a value
-    pub fn remove<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
-        let prev = self.beer_mut().ok()?.data.remove(key)?;
-        self.data_status.store(true, Ordering::SeqCst);
-        from_value(prev).ok()
+    pub fn remove(&self, key: &str) -> Option<Value> {
+        let status = self.status().load(Ordering::Acquire);
+        // not allowed `PURGED`
+        if status != PURGED {
+            if let Ok(mut d) = self.data().write() {
+                // not allowed `RENEWED & CHANGED`
+                if status == UNCHANGED {
+                    self.status().store(CHANGED, Ordering::SeqCst);
+                }
+                return d.remove(key);
+            }
+        }
+        None
+    }
+
+    /// Removes a value and deserialize
+    pub fn remove_as<T>(&self, key: &str) -> Option<T>
+    where
+        T: DeserializeOwned,
+    {
+        self.remove(key).and_then(|t| from_value(t).ok())
     }
 
     /// Clears the state
-    pub fn clear(&self) -> Result<()> {
-        self.beer_mut()?.data.clear();
-        self.data_status.store(true, Ordering::SeqCst);
-        Ok(())
-    }
-
-    /// Saves the current state to the store
-    pub async fn save(&self) -> Result<()> {
-        if self.status.fetch_add(1, Ordering::SeqCst) == 0 {
-            self.config
-                .set(&self.id()?, self.data()?.clone(), self.max_age())
-                .await?;
+    pub fn clear(&self) {
+        let status = self.status().load(Ordering::Acquire);
+        // not allowed `PURGED`
+        if status != PURGED {
+            if let Ok(mut d) = self.data().write() {
+                // not allowed `RENEWED & CHANGED`
+                if status == UNCHANGED {
+                    self.status().store(CHANGED, Ordering::SeqCst);
+                }
+                d.clear();
+            }
         }
-        Ok(())
     }
 
     /// Renews the new state
-    pub async fn renew(&mut self) -> Result<()> {
-        if self.status.load(Ordering::Relaxed) < 2 {
-            self.config.remove(&self.id()?).await?;
-            self.beer_mut()?.data.clear();
-            self.set_id(&self.config.generate())?;
-            self.config
-                .set(&self.id()?, self.data()?, self.max_age())
-                .await?;
-            self.status.store(2, Ordering::SeqCst);
+    pub fn renew(&self) {
+        let status = self.status().load(Ordering::Acquire);
+        // not allowed `PURGED & RENEWED`
+        if status != PURGED && status != RENEWED {
+            self.status().store(RENEWED, Ordering::SeqCst)
         }
-        Ok(())
     }
 
     /// Destroys the current state from store
-    pub async fn destroy(&self) -> Result<()> {
-        if self.status.load(Ordering::Relaxed) < 3 {
-            self.config.remove(&self.id()?).await?;
-            self.status.store(3, Ordering::SeqCst);
+    pub fn purge(&self) {
+        let status = self.status().load(Ordering::Acquire);
+        // not allowed `PURGED`
+        if status != PURGED {
+            self.status().store(PURGED, Ordering::SeqCst);
+            if let Ok(mut d) = self.data().write() {
+                d.clear();
+            }
         }
-        Ok(())
     }
 }
 
-impl<S: Storage> fmt::Debug for Session<S> {
+impl fmt::Debug for Session {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Session")
-            .field("status", &self.status)
-            .field("data_status", &self.data_status)
-            .field("beer", &self.beer)
-            .field("config", &self.config)
-            .finish()
+        self.state.fmt(f)
     }
-}
-
-/// A Session Beer
-#[derive(Debug, Clone, Default)]
-pub struct SessionBeer {
-    /// Session's id
-    pub id: String,
-    /// Session's Data
-    pub data: Data,
 }

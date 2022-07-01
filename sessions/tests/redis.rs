@@ -1,54 +1,59 @@
 #![cfg(feature = "redis")]
 
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use anyhow::Result;
+use redis::aio::ConnectionManager;
 
 use sessions::*;
 
 #[tokio::test]
 async fn redis() -> Result<()> {
     let config = Arc::new(Config {
-        cookie: CookieOptions::new(),
-        storage: RedisStorage::new(RedisClient::open("unix:///tmp/redis.sock")?),
-        generate: Box::new(nano_id::base64::<32>),
-        verify: Box::new(|sid| sid.len() == 32),
+        storage: RedisStorage::new(
+            ConnectionManager::new(RedisClient::open("unix:///tmp/redis.sock")?).await?,
+        ),
+        generate: nano_id::base64::<32>,
+        verify: |sid: &str| sid.len() == 32,
     });
 
     let id = config.generate();
 
-    let session = Session::new(&id, 0, config.clone());
+    assert!(id.len() == 32);
+    assert!(config.verify(&id));
 
-    assert_eq!(session.set::<String>("crate", "sessions".to_string()), None);
+    let session = Session::new(Data::new());
+    assert!(session.status().load(Ordering::Acquire) == sessions::UNCHANGED);
 
-    assert!(session.save().await.is_ok());
+    assert!(session
+        .set::<String>("crate", "sessions".to_string())
+        .is_ok());
+    assert!(session.status().load(Ordering::Acquire) == sessions::CHANGED);
 
-    assert_eq!(session.get("crate"), Some("sessions".to_string()));
+    assert_eq!(session.get("crate")?, Some("sessions".to_string()));
 
-    assert_eq!(
-        session.remove::<String>("crate"),
-        Some("sessions".to_string())
-    );
+    assert_eq!(session.remove("crate"), Some("sessions".into()));
+    assert!(session.status().load(Ordering::Acquire) == sessions::CHANGED);
 
-    assert_eq!(session.remove::<String>("crate"), None);
+    assert_eq!(session.remove_as::<String>("crate"), None);
+    assert!(session.status().load(Ordering::Acquire) == sessions::CHANGED);
 
-    assert_eq!(session.get::<String>("crate"), None);
+    assert_eq!(session.get::<String>("crate")?, None);
 
-    assert!(session.clear().is_ok());
+    session.clear();
+    assert!(session.status().load(Ordering::Acquire) == sessions::CHANGED);
+    session.clear();
+    assert!(session.status().load(Ordering::Acquire) == sessions::CHANGED);
 
-    let mut session = Session::new(&id, 0, config.clone());
+    let session = Session::new(Data::new());
+    assert!(session.status().load(Ordering::Acquire) == sessions::UNCHANGED);
 
-    if let Some(data) = config.get(&id).await? {
-        session.set_data(data)?;
-    }
+    session.renew();
+    assert!(session.status().load(Ordering::Acquire) == sessions::RENEWED);
 
-    assert_eq!(session.get("crate"), Some("sessions".to_string()));
-
-    assert!(session.renew().await.is_ok());
-
-    assert_ne!(id, session.id()?);
-
-    assert!(session.destroy().await.is_ok());
+    session.purge();
+    assert!(session.status().load(Ordering::Acquire) == sessions::PURGED);
 
     Ok(())
 }

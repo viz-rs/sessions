@@ -1,13 +1,13 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
+    sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
-use sessions_core::{anyhow, async_trait, Data, Result, Storage};
+use sessions_core::{async_trait, Data, Error, Storage};
 
 #[derive(Debug, Clone)]
-struct State(Instant, Data);
+pub struct State(Instant, Data);
 
 impl State {
     fn new(i: Instant, d: Data) -> Self {
@@ -27,19 +27,20 @@ impl MemoryStorage {
         }
     }
 
-    fn read(&self) -> Result<RwLockReadGuard<'_, HashMap<String, State>>> {
-        self.inner.read().map_err(|e| anyhow!(e.to_string()))
-    }
-
-    fn write(&self) -> Result<RwLockWriteGuard<'_, HashMap<String, State>>> {
-        self.inner.write().map_err(|e| anyhow!(e.to_string()))
+    pub fn data(&self) -> &RwLock<HashMap<String, State>> {
+        &self.inner
     }
 }
 
 #[async_trait]
 impl Storage for MemoryStorage {
-    async fn get(&self, key: &str) -> Result<Option<Data>> {
-        let state = self.read()?.get(key).cloned();
+    async fn get(&self, key: &str) -> Result<Option<Data>, Error> {
+        let state = self
+            .data()
+            .read()
+            .map_err(|e| Error::RwLock(e.to_string()))?
+            .get(key)
+            .cloned();
         if let Some(State(time, data)) = state {
             if time >= Instant::now() {
                 return Ok(Some(data));
@@ -51,19 +52,27 @@ impl Storage for MemoryStorage {
         Ok(None)
     }
 
-    async fn set(&self, key: &str, val: Data, exp: Duration) -> Result<()> {
-        self.write()?
-            .insert(key.to_string(), State::new(Instant::now() + exp, val));
+    async fn set(&self, key: &str, val: Data, exp: &Duration) -> Result<(), Error> {
+        self.data()
+            .write()
+            .map_err(|e| Error::RwLock(e.to_string()))?
+            .insert(key.to_string(), State::new(Instant::now() + *exp, val));
         Ok(())
     }
 
-    async fn remove(&self, key: &str) -> Result<()> {
-        self.write()?.remove(key);
+    async fn remove(&self, key: &str) -> Result<(), Error> {
+        self.data()
+            .write()
+            .map_err(|e| Error::RwLock(e.to_string()))?
+            .remove(key);
         Ok(())
     }
 
-    async fn reset(&self) -> Result<()> {
-        self.write()?.clear();
+    async fn reset(&self) -> Result<(), Error> {
+        self.data()
+            .write()
+            .map_err(|e| Error::RwLock(e.to_string()))?
+            .clear();
         Ok(())
     }
 }

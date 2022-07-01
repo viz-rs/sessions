@@ -1,6 +1,6 @@
 [package]
 name = "sessions"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "General sessions module for web services"
 documentation = "https://docs.rs/sessions"
@@ -13,19 +13,22 @@ edition = "2021"
 default = []
 
 memory = ["sessions-memory"]
-redis = ["tokio-redis"]
+redis = ["__tokio-redis"]
 
-tokio-redis = ["sessions-redis/tokio-comp"]
-async-std-redis = ["sessions-redis/async-std-comp"]
+__tokio-redis = ["sessions-redis/tokio-comp"]
+__async-std-redis = ["sessions-redis/async-std-comp"]
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.2.3" }
-sessions-memory = { path = "../sessions-memory", version = "0.2.3", optional = true }
-sessions-redis = { path = "../sessions-redis", version = "0.2.3", optional = true }
+sessions-core = { path = "../sessions-core", version = "0.3.0" }
+sessions-memory = { path = "../sessions-memory", version = "0.3.0", optional = true }
+sessions-redis = { path = "../sessions-redis", version = "0.3.0", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0"
 nano-id = "0.2"
 
 futures-executor = "0.3"
-tokio = { version = "1.18", features = ["macros"] }
+tokio = { version = "1.19", features = ["macros"] }
+redis = { version = "0.21", default-features = false, features = [
+  "connection-manager",
+] }

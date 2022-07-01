@@ -1,33 +1,31 @@
-use std::{fmt, ops::Deref, time::Duration};
+use std::{fmt, ops::Deref};
 
-use crate::{CookieOptions, Storage};
+use crate::Storage;
 
 /// Sessions Config
-pub struct Config<S: Storage> {
-    /// Cookie Options
-    pub cookie: CookieOptions,
+pub struct Config<S, G, V>
+where
+    S: Storage,
+    G: Fn() -> String,
+    V: Fn(&str) -> bool,
+{
     /// Current Storage
     pub storage: S,
     /// Generates session id
-    pub generate: Box<dyn Send + Sync + 'static + Fn() -> String>,
+    pub generate: G,
     /// Verifes session id
-    pub verify: Box<dyn Send + Sync + 'static + Fn(&str) -> bool>,
+    pub verify: V,
 }
 
-impl<S: Storage> Config<S> {
+impl<S, G, V> Config<S, G, V>
+where
+    S: Storage,
+    G: Fn() -> String,
+    V: Fn(&str) -> bool,
+{
     /// Gets current storage
     pub fn storage(&self) -> &S {
         &self.storage
-    }
-
-    /// Gets cookie options
-    pub fn cookie(&self) -> &CookieOptions {
-        &self.cookie
-    }
-
-    /// Gets cookie's max_age or session's expries
-    pub fn max_age(&self) -> Duration {
-        self.cookie.max_age
     }
 
     /// Generates a session id
@@ -41,22 +39,34 @@ impl<S: Storage> Config<S> {
     }
 }
 
-impl<S: Storage> fmt::Debug for Config<S> {
+impl<S, G, V> fmt::Debug for Config<S, G, V>
+where
+    S: Storage,
+    G: Fn() -> String,
+    V: Fn(&str) -> bool,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Config")
-            .field("cookie", &self.cookie)
-            .field("storage", &self.storage)
-            .finish()
+        f.debug_struct("Config").finish()
     }
 }
 
-impl<S: Storage> AsRef<S> for Config<S> {
+impl<S, G, V> AsRef<S> for Config<S, G, V>
+where
+    S: Storage,
+    G: Fn() -> String,
+    V: Fn(&str) -> bool,
+{
     fn as_ref(&self) -> &S {
         &self.storage
     }
 }
 
-impl<S: Storage> Deref for Config<S> {
+impl<S, G, V> Deref for Config<S, G, V>
+where
+    S: Storage,
+    G: Fn() -> String,
+    V: Fn(&str) -> bool,
+{
     type Target = S;
 
     fn deref(&self) -> &S {

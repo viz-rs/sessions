@@ -4,5 +4,4 @@ members = [
   "sessions-core",
   "sessions-memory",
   "sessions-redis",
-  "sessions-sled"
 ]
