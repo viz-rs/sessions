@@ -19,9 +19,9 @@ __tokio-redis = ["sessions-redis/tokio-comp"]
 __async-std-redis = ["sessions-redis/async-std-comp"]
 
 [dependencies]
-sessions-core = { path = "../sessions-core" }
-sessions-memory = { path = "../sessions-memory", optional = true }
-sessions-redis = { path = "../sessions-redis", optional = true }
+sessions-core = { path = "../sessions-core", version = "0.3.2" }
+sessions-memory = { path = "../sessions-memory", version = "0.3.2", optional = true }
+sessions-redis = { path = "../sessions-redis", version = "0.3.2", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0"

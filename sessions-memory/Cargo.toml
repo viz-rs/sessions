@@ -10,4 +10,4 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-sessions-core = { path = "../sessions-core" }
+sessions-core = { path = "../sessions-core", version = "0.3.2" }
