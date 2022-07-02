@@ -40,8 +40,8 @@ impl Session {
         &self.state.status
     }
 
-    /// Gets data of the session
-    pub fn data(&self) -> &RwLock<Data> {
+    /// Gets lock data of the session
+    pub fn lock_data(&self) -> &RwLock<Data> {
         &self.state.data
     }
 
@@ -51,7 +51,7 @@ impl Session {
         T: DeserializeOwned,
     {
         match self
-            .data()
+            .lock_data()
             .read()
             .map_err(|e| Error::RwLock(e.to_string()))?
             .get(key)
@@ -70,7 +70,7 @@ impl Session {
         let status = self.status().load(Ordering::Acquire);
         // not allowed `PURGED`
         if status != PURGED {
-            if let Ok(mut d) = self.data().write() {
+            if let Ok(mut d) = self.lock_data().write() {
                 // not allowed `RENEWED & CHANGED`
                 if status == UNCHANGED {
                     self.status().store(CHANGED, Ordering::SeqCst);
@@ -86,7 +86,7 @@ impl Session {
         let status = self.status().load(Ordering::Acquire);
         // not allowed `PURGED`
         if status != PURGED {
-            if let Ok(mut d) = self.data().write() {
+            if let Ok(mut d) = self.lock_data().write() {
                 // not allowed `RENEWED & CHANGED`
                 if status == UNCHANGED {
                     self.status().store(CHANGED, Ordering::SeqCst);
@@ -110,7 +110,7 @@ impl Session {
         let status = self.status().load(Ordering::Acquire);
         // not allowed `PURGED`
         if status != PURGED {
-            if let Ok(mut d) = self.data().write() {
+            if let Ok(mut d) = self.lock_data().write() {
                 // not allowed `RENEWED & CHANGED`
                 if status == UNCHANGED {
                     self.status().store(CHANGED, Ordering::SeqCst);
@@ -135,10 +135,18 @@ impl Session {
         // not allowed `PURGED`
         if status != PURGED {
             self.status().store(PURGED, Ordering::SeqCst);
-            if let Ok(mut d) = self.data().write() {
+            if let Ok(mut d) = self.lock_data().write() {
                 d.clear();
             }
         }
+    }
+
+    /// Gets all raw key-value data from the session
+    pub fn data(&self) -> Result<Data, Error> {
+        self.lock_data()
+            .read()
+            .map_err(|e| Error::RwLock(e.to_string()))
+            .map(|d| d.clone())
     }
 }
 
