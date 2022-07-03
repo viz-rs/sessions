@@ -1,4 +1,4 @@
-#![cfg(feature = "memory")]
+#![cfg(all(feature = "memory", feature = "session"))]
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;

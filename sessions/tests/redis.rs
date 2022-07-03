@@ -1,4 +1,4 @@
-#![cfg(feature = "redis")]
+#![cfg(all(feature = "redis", feature = "session"))]
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
