@@ -1,6 +1,6 @@
 [package]
 name = "sessions"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "General sessions module for web services"
 documentation = "https://docs.rs/sessions"

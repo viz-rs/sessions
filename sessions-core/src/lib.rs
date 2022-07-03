@@ -1,8 +1,6 @@
 //! Sessions Core
 
-#![forbid(unsafe_code, rust_2018_idioms)]
-#![deny(missing_debug_implementations, nonstandard_style)]
-#![warn(missing_docs, rustdoc::missing_doc_code_examples, unreachable_pub)]
+#![forbid(unsafe_code)]
 
 /// Set if the session was unchanged or inited.
 pub const UNCHANGED: u8 = 0;
@@ -19,14 +17,19 @@ pub const CHANGED: u8 = 3;
 /// A data state
 pub type Data = std::collections::BTreeMap<String, serde_json::Value>;
 
-mod config;
 mod error;
-mod session;
+mod state;
 mod storage;
+mod store;
 
 pub use async_trait::async_trait;
-pub use config::Config;
 pub use error::Error;
 pub use serde_json::Value;
-pub use session::Session;
+pub use state::State;
 pub use storage::Storage;
+pub use store::Store;
+
+#[cfg(feature = "session")]
+mod session;
+#[cfg(feature = "session")]
+pub use session::Session;

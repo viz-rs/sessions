@@ -10,18 +10,18 @@ use sessions::*;
 
 #[tokio::test]
 async fn redis() -> Result<()> {
-    let config = Arc::new(Config {
-        storage: RedisStorage::new(
+    let config = Arc::new(Store::new(
+        RedisStorage::new(
             ConnectionManager::new(RedisClient::open("unix:///tmp/redis.sock")?).await?,
         ),
-        generate: nano_id::base64::<32>,
-        verify: |sid: &str| sid.len() == 32,
-    });
+        nano_id::base64::<32>,
+        |sid: &str| sid.len() == 32,
+    ));
 
-    let id = config.generate();
+    let id = (config.generate)();
 
     assert!(id.len() == 32);
-    assert!(config.verify(&id));
+    assert!((config.verify)(&id));
 
     let session = Session::new(Data::new());
     assert!(session.status().load(Ordering::Acquire) == sessions::UNCHANGED);

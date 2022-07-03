@@ -9,16 +9,16 @@ use sessions::*;
 
 #[test]
 fn memory() -> Result<()> {
-    let config = Arc::new(Config {
-        storage: MemoryStorage::new(),
-        generate: nano_id::base64::<32>,
-        verify: |sid: &str| sid.len() == 32,
-    });
+    let config = Arc::new(Store::new(
+        MemoryStorage::new(),
+        nano_id::base64::<32>,
+        |sid: &str| sid.len() == 32,
+    ));
 
-    let id = config.generate();
+    let id = (config.generate)();
 
     assert!(id.len() == 32);
-    assert!(config.verify(&id));
+    assert!((config.verify)(&id));
 
     let session = Session::new(Data::new());
     assert!(session.status().load(Ordering::Acquire) == sessions::UNCHANGED);

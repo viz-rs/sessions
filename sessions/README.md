@@ -51,11 +51,11 @@ sessions = { version = "0.3", features = ["memory"] }
 use std::sync::Arc;
 use sessions::*;
 
-let config = Arc::new(Config {
-  storage: MemoryStorage::new(),
-  generate: nano_id::base64::<32>,
-  verify: |sid: &str| sid.len() == 32,
-});
+let config = Arc::new(Store::new(
+  MemoryStorage::new(),
+  nano_id::base64::<32>,
+  |sid: &str| sid.len() == 32,
+));
 
 
 let session = Session::new(Data::new());

@@ -1,6 +1,6 @@
 [package]
 name = "sessions-core"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["FangDun Tsai <cfddream@gmail.com>"]
 description = "Sessions Core"
 documentation = "https://docs.rs/sessions-core"
@@ -8,6 +8,11 @@ homepage = "https://github.com/viz-rs/sessions"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 edition = "2021"
+
+[features]
+default = ["session"]
+
+session = []
 
 [dependencies]
 async-trait = "0.1"

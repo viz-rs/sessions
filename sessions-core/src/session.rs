@@ -9,26 +9,19 @@ use std::{
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{from_value, to_value, Value};
 
-use crate::{Data, Error, CHANGED, PURGED, RENEWED, UNCHANGED};
-
-/// The Session State
-#[derive(Debug, Default)]
-struct SessionState {
-    status: AtomicU8,
-    data: RwLock<Data>,
-}
+use crate::{Data, Error, State, CHANGED, PURGED, RENEWED, UNCHANGED};
 
 /// Session
 #[derive(Clone)]
 pub struct Session {
-    state: Arc<SessionState>,
+    state: Arc<State>,
 }
 
 impl Session {
     /// Creates new `Session` with `Data`
     pub fn new(data: Data) -> Self {
         Self {
-            state: Arc::new(SessionState {
+            state: Arc::new(State {
                 status: AtomicU8::new(UNCHANGED),
                 data: RwLock::new(data),
             }),
@@ -75,7 +68,7 @@ impl Session {
                 if status == UNCHANGED {
                     self.status().store(CHANGED, Ordering::SeqCst);
                 }
-                d.insert(key.into(), to_value(val)?);
+                d.insert(key.into(), to_value(val).map_err(Error::Json)?);
             }
         }
         Ok(())
