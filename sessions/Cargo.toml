@@ -14,10 +14,10 @@ default = []
 
 session = ["sessions-core/session"]
 memory = ["sessions-memory"]
-redis = ["__tokio-redis"]
+redis = ["__redis-tokio"]
 
-__tokio-redis = ["sessions-redis/tokio-comp"]
-__async-std-redis = ["sessions-redis/async-std-comp"]
+__redis-tokio = ["sessions-redis/tokio"]
+__redis-async-std = ["sessions-redis/async-std"]
 
 [dependencies]
 sessions-core = { path = "../sessions-core", version = "0.3.4" }
