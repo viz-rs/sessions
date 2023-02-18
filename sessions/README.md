@@ -44,7 +44,7 @@
 ### Example
 
 ```toml
-sessions = { version = "0.3", features = ["memory"] }
+sessions = { version = "0.4", features = ["memory"] }
 ```
 
 ```rust
