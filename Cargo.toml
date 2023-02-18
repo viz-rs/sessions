@@ -5,3 +5,43 @@ members = [
   "sessions-memory",
   "sessions-redis",
 ]
+
+[workspace.package]
+version = "0.3.4"
+authors = ["Fangdun Tsai <cfddream@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/sessions"
+homepage = "https://github.com/viz-rs/sessions"
+repository = "https://github.com/viz-rs/sessions"
+
+[workspace.dependencies]
+sessions = { version = "0.3.4", path = "sessions" }
+sessions-core = { version = "0.3.4", path = "sessions-core" }
+sessions-memory = { version = "0.3.4", path = "sessions-memory" }
+sessions-redis = { version = "0.3.4", path = "sessions-redis" }
+
+anyhow = "1.0"
+async-trait = "0.1"
+cookie = "0.17"
+nano-id = "0.2"
+serde = "1.0"
+serde_json = "1.0"
+thiserror = "1.0"
+
+futures-executor = "0.3"
+tokio = { version = "1", features = ["macros"] }
+redis = { version = "0.22", default-features = false, features = [
+  "aio",
+  "connection-manager",
+] }
+
+[workspace.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[profile.dev]
+split-debuginfo = "unpacked"
+
+[profile.dev.package."*"]
+opt-level = 2

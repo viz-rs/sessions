@@ -1,35 +1,37 @@
 [package]
 name = "sessions"
-version = "0.3.4"
-authors = ["FangDun Tsai <cfddream@gmail.com>"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
 description = "General sessions module for web services"
-documentation = "https://docs.rs/sessions"
-homepage = "https://github.com/viz-rs/sessions"
-license = "MIT OR Apache-2.0"
+keywords = ["async", "framework", "http", "service", "web"]
+categories = ["asynchronous", "network-programming", "web-programming"]
 readme = "README.md"
-edition = "2021"
 
 [features]
 default = []
 
 session = ["sessions-core/session"]
-memory = ["sessions-memory"]
-redis = ["__redis-tokio"]
 
-__redis-tokio = ["sessions-redis/tokio"]
-__redis-async-std = ["sessions-redis/async-std"]
+memory = ["dep:sessions-memory"]
+redis = ["dep:sessions-redis"]
+
+tokio = ["sessions-redis?/tokio"]
+async-std = ["sessions-redis?/async-std"]
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.3.4" }
-sessions-memory = { path = "../sessions-memory", version = "0.3.4", optional = true }
-sessions-redis = { path = "../sessions-redis", version = "0.3.4", optional = true }
+sessions-core.workspace = true
+sessions-memory = { workspace = true, optional = true }
+sessions-redis = { workspace = true, optional = true }
 
 [dev-dependencies]
-anyhow = "1.0"
-nano-id = "0.2"
+anyhow.workspace = true
+nano-id.workspace = true
 
-futures-executor = "0.3"
-tokio = { version = "1.19", features = ["macros"] }
-redis = { version = "0.21", default-features = false, features = [
-  "connection-manager",
-] }
+futures-executor.workspace = true
+tokio.workspace = true
+redis.workspace = true

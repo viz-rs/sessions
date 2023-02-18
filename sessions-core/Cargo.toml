@@ -1,20 +1,21 @@
 [package]
 name = "sessions-core"
-version = "0.3.4"
-authors = ["FangDun Tsai <cfddream@gmail.com>"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
 description = "Sessions Core"
-documentation = "https://docs.rs/sessions-core"
-homepage = "https://github.com/viz-rs/sessions"
-license = "MIT OR Apache-2.0"
 readme = "README.md"
-edition = "2021"
 
 [features]
 session = []
 
 [dependencies]
-async-trait = "0.1"
-cookie = "0.16"
-serde = "1.0"
-serde_json = "1.0"
-thiserror = "1.0"
+async-trait.workspace = true
+cookie.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

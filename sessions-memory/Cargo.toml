@@ -1,13 +1,14 @@
 [package]
 name = "sessions-memory"
-version = "0.3.4"
-authors = ["FangDun Tsai <cfddream@gmail.com>"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
 description = "Sessions Memory Storage"
-documentation = "https://docs.rs/sessions-memory"
-homepage = "https://github.com/viz-rs/sessions"
-license = "MIT OR Apache-2.0"
 readme = "README.md"
-edition = "2021"
 
 [dependencies]
-sessions-core = { path = "../sessions-core", version = "0.3.4" }
+sessions-core.workspace = true
