@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2023-02-18
+
+### Updated
+
+* updates deps
+
 ## [0.2.1] - 2021-09-16
 
 ### Changed
@@ -41,7 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `MemoryStorage::new`
 
-[Unreleased]: https://github.com/viz-rs/path-tree/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/viz-rs/path-tree/compare/v0.4.0...HEAD
+[0.3.4]: https://github.com/viz-rs/path-tree/compare/v0.3.4...v0.4.0
 [0.2.1]: https://github.com/viz-rs/path-tree/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/viz-rs/path-tree/compare/v0.1.9...v0.2.0
 [0.1.9]: https://github.com/viz-rs/path-tree/compare/v0.1.8...v0.1.9
