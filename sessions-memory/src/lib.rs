@@ -21,12 +21,14 @@ pub struct MemoryStorage {
 }
 
 impl MemoryStorage {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             inner: Arc::default(),
         }
     }
 
+    #[must_use]
     pub fn data(&self) -> &RwLock<HashMap<String, State>> {
         &self.inner
     }
@@ -44,9 +46,8 @@ impl Storage for MemoryStorage {
         if let Some(State(time, data)) = state {
             if time >= Instant::now() {
                 return Ok(Some(data));
-            } else {
-                self.remove(key).await?;
             }
+            self.remove(key).await?;
         }
 
         Ok(None)
