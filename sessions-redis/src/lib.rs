@@ -37,7 +37,11 @@ where
     async fn set(&self, key: &str, val: Data, exp: &Duration) -> Result<(), Error> {
         self.inner
             .clone()
-            .set_ex(key, serde_json::to_vec(&val)?, exp.as_secs() as usize)
+            .set_ex(
+                key,
+                serde_json::to_vec(&val)?,
+                usize::try_from(exp.as_secs()).unwrap_or(usize::MAX),
+            )
             .await
             .map_err(|e| Error::Connection(e.to_string()))
     }
