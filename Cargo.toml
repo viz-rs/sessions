@@ -5,9 +5,10 @@ members = [
   "sessions-memory",
   "sessions-redis",
 ]
+resolver = "2"
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Fangdun Tsai <cfddream@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -16,10 +17,10 @@ homepage = "https://github.com/viz-rs/sessions"
 repository = "https://github.com/viz-rs/sessions"
 
 [workspace.dependencies]
-sessions = { version = "0.4.0", path = "sessions" }
-sessions-core = { version = "0.4.0", path = "sessions-core" }
-sessions-memory = { version = "0.4.0", path = "sessions-memory" }
-sessions-redis = { version = "0.4.0", path = "sessions-redis" }
+sessions = { version = "0.5.0", path = "sessions" }
+sessions-core = { version = "0.5.0", path = "sessions-core" }
+sessions-memory = { version = "0.5.0", path = "sessions-memory" }
+sessions-redis = { version = "0.5.0", path = "sessions-redis" }
 
 anyhow = "1.0"
 async-trait = "0.1"
@@ -31,7 +32,7 @@ thiserror = "1.0"
 
 futures-executor = "0.3"
 tokio = { version = "1", features = ["macros"] }
-redis = { version = "0.22", default-features = false, features = [
+redis = { version = "0.23", default-features = false, features = [
   "aio",
   "connection-manager",
 ] }
