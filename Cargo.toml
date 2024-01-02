@@ -8,33 +8,34 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Fangdun Tsai <cfddream@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/sessions"
 homepage = "https://github.com/viz-rs/sessions"
 repository = "https://github.com/viz-rs/sessions"
+rust-version = "1.75"
 
 [workspace.dependencies]
-sessions = { version = "0.5.0", path = "sessions" }
-sessions-core = { version = "0.5.0", path = "sessions-core" }
-sessions-memory = { version = "0.5.0", path = "sessions-memory" }
-sessions-redis = { version = "0.5.0", path = "sessions-redis" }
+sessions = { version = "0.6.0", path = "sessions" }
+sessions-core = { version = "0.6.0", path = "sessions-core" }
+sessions-memory = { version = "0.6.0", path = "sessions-memory" }
+sessions-redis = { version = "0.6.0", path = "sessions-redis" }
 
-anyhow = "1.0"
-async-trait = "0.1"
-nano-id = "0.3"
 serde = "1.0"
 serde_json = "1.0"
-thiserror = "1.0"
 
-futures-executor = "0.3"
-tokio = { version = "1", features = ["macros"] }
-redis = { version = "0.23", default-features = false, features = [
+redis = { version = "0.24", default-features = false, features = [
   "aio",
   "connection-manager",
 ] }
+
+anyhow = "1.0"
+nano-id = "0.3"
+
+futures-executor = "0.3"
+tokio = { version = "1", features = ["macros"] }
 
 [workspace.metadata.docs.rs]
 all-features = true

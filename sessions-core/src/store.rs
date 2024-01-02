@@ -25,12 +25,6 @@ impl<S, G, V> Store<S, G, V> {
     }
 }
 
-impl<S, G, V> fmt::Debug for Store<S, G, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Config").finish()
-    }
-}
-
 impl<S, G, V> AsRef<S> for Store<S, G, V> {
     fn as_ref(&self) -> &S {
         &self.storage
@@ -42,5 +36,11 @@ impl<S, G, V> Deref for Store<S, G, V> {
 
     fn deref(&self) -> &S {
         &self.storage
+    }
+}
+
+impl<S, G, V> fmt::Debug for Store<S, G, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Store").finish()
     }
 }
