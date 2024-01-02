@@ -4,16 +4,14 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use anyhow::Result;
-use redis::aio::ConnectionManager;
+use redis::{aio::ConnectionManager, Client};
 
 use sessions::*;
 
 #[tokio::test]
 async fn redis() -> Result<()> {
     let config = Arc::new(Store::new(
-        RedisStorage::new(
-            ConnectionManager::new(RedisClient::open("unix:///tmp/redis.sock")?).await?,
-        ),
+        RedisStorage::new(ConnectionManager::new(Client::open("unix:///tmp/redis.sock")?).await?),
         nano_id::base64::<32>,
         |sid: &str| sid.len() == 32,
     ));
