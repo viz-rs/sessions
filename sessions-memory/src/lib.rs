@@ -1,10 +1,11 @@
 use std::{
     collections::HashMap,
+    io::{Error, ErrorKind, Result},
     sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
-use sessions_core::{async_trait, Data, Error, Storage};
+use sessions_core::{Data, Storage};
 
 #[derive(Debug, Clone)]
 pub struct State(Instant, Data);
@@ -23,26 +24,25 @@ pub struct MemoryStorage {
 impl MemoryStorage {
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            inner: Arc::default(),
-        }
+        Self::default()
     }
 
+    /// Gets a reference to the underlying data.
     #[must_use]
-    pub fn data(&self) -> &RwLock<HashMap<String, State>> {
+    pub fn get_ref(&self) -> &RwLock<HashMap<String, State>> {
         &self.inner
     }
 }
 
-#[async_trait]
 impl Storage for MemoryStorage {
-    async fn get(&self, key: &str) -> Result<Option<Data>, Error> {
+    async fn get(&self, key: &str) -> Result<Option<Data>> {
         let state = self
-            .data()
+            .get_ref()
             .read()
-            .map_err(|e| Error::RwLock(e.to_string()))?
+            .map_err(into_io_error)?
             .get(key)
             .cloned();
+
         if let Some(State(time, data)) = state {
             if time >= Instant::now() {
                 return Ok(Some(data));
@@ -53,27 +53,26 @@ impl Storage for MemoryStorage {
         Ok(None)
     }
 
-    async fn set(&self, key: &str, val: Data, exp: &Duration) -> Result<(), Error> {
-        self.data()
+    async fn set(&self, key: &str, val: Data, exp: &Duration) -> Result<()> {
+        self.get_ref()
             .write()
-            .map_err(|e| Error::RwLock(e.to_string()))?
+            .map_err(into_io_error)?
             .insert(key.to_string(), State::new(Instant::now() + *exp, val));
         Ok(())
     }
 
-    async fn remove(&self, key: &str) -> Result<(), Error> {
-        self.data()
-            .write()
-            .map_err(|e| Error::RwLock(e.to_string()))?
-            .remove(key);
+    async fn remove(&self, key: &str) -> Result<()> {
+        self.get_ref().write().map_err(into_io_error)?.remove(key);
         Ok(())
     }
 
-    async fn reset(&self) -> Result<(), Error> {
-        self.data()
-            .write()
-            .map_err(|e| Error::RwLock(e.to_string()))?
-            .clear();
+    async fn reset(&self) -> Result<()> {
+        self.get_ref().write().map_err(into_io_error)?.clear();
         Ok(())
     }
+}
+
+#[inline]
+fn into_io_error<E: std::error::Error>(e: E) -> Error {
+    Error::new(ErrorKind::Other, e.to_string())
 }

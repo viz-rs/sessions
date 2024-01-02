@@ -1,26 +1,25 @@
-use std::time::Duration;
+use std::{future::Future, io::Result, time::Duration};
 
-use crate::{async_trait, Data, Error};
+use crate::Data;
 
 /// A Storage Trait
-#[async_trait]
 pub trait Storage: Send + Sync {
-    /// Get a data from storage by the key
-    async fn get(&self, key: &str) -> Result<Option<Data>, Error>;
+    /// Gets a [`Data`] from storage by the key
+    fn get(&self, key: &str) -> impl Future<Output = Result<Option<Data>>> + Send;
 
-    /// Set a session to storage
-    async fn set(&self, key: &str, val: Data, exp: &Duration) -> Result<(), Error>;
+    /// Sets a session [`Data`] into storage
+    fn set(&self, key: &str, val: Data, exp: &Duration) -> impl Future<Output = Result<()>> + Send;
 
-    /// Remove a data from storage by the key
-    async fn remove(&self, key: &str) -> Result<(), Error>;
+    /// Removes a data from storage by the key
+    fn remove(&self, key: &str) -> impl Future<Output = Result<()>> + Send;
 
-    /// Reset the storage and remove all keys
-    async fn reset(&self) -> Result<(), Error> {
-        Ok(())
+    /// Resets the storage and remove all keys
+    fn reset(&self) -> impl Future<Output = Result<()>> + Send {
+        async { Ok(()) }
     }
 
-    /// Close the connection
-    async fn close(&self) -> Result<(), Error> {
-        Ok(())
+    /// Closes the connection
+    fn close(&self) -> impl Future<Output = Result<()>> + Send {
+        async { Ok(()) }
     }
 }

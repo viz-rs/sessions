@@ -17,17 +17,16 @@ pub const CHANGED: u8 = 3;
 /// A data state
 pub type Data = std::collections::BTreeMap<String, serde_json::Value>;
 
-mod error;
 mod state;
-mod storage;
-mod store;
-
-pub use async_trait::async_trait;
-pub use error::Error;
-pub use serde_json::Value;
 pub use state::State;
+
+mod storage;
 pub use storage::Storage;
+
+mod store;
 pub use store::Store;
+
+pub use serde_json::Value;
 
 #[cfg(feature = "session")]
 mod session;

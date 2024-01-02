@@ -1,5 +1,6 @@
 use std::{
     fmt,
+    io::{Error, ErrorKind, Result},
     sync::{
         atomic::{AtomicU8, Ordering},
         Arc, RwLock,
@@ -7,9 +8,8 @@ use std::{
 };
 
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{from_value, to_value, Value};
 
-use crate::{Data, Error, State, CHANGED, PURGED, RENEWED, UNCHANGED};
+use crate::{Data, State, CHANGED, PURGED, RENEWED, UNCHANGED};
 
 /// Session
 #[derive(Clone)]
@@ -39,24 +39,24 @@ impl Session {
     }
 
     /// Gets a value by the key
-    pub fn get<T>(&self, key: &str) -> Result<Option<T>, Error>
+    pub fn get<T>(&self, key: &str) -> Result<Option<T>>
     where
         T: DeserializeOwned,
     {
         match self
             .lock_data()
             .read()
-            .map_err(|e| Error::RwLock(e.to_string()))?
+            .map_err(into_io_error)?
             .get(key)
             .cloned()
         {
-            Some(t) => from_value(t).map(Some).map_err(Error::Json),
+            Some(t) => serde_json::from_value(t).map(Some).map_err(Into::into),
             None => Ok(None),
         }
     }
 
     /// Sets a value by the key
-    pub fn set<T>(&self, key: &str, val: T) -> Result<(), Error>
+    pub fn set<T>(&self, key: &str, val: T) -> Result<()>
     where
         T: Serialize,
     {
@@ -68,14 +68,17 @@ impl Session {
                 if status == UNCHANGED {
                     self.status().store(CHANGED, Ordering::SeqCst);
                 }
-                d.insert(key.into(), to_value(val).map_err(Error::Json)?);
+                d.insert(
+                    key.into(),
+                    serde_json::to_value(val).map_err(into_io_error)?,
+                );
             }
         }
         Ok(())
     }
 
     /// Removes a value
-    pub fn remove(&self, key: &str) -> Option<Value> {
+    pub fn remove(&self, key: &str) -> Option<serde_json::Value> {
         let status = self.status().load(Ordering::Acquire);
         // not allowed `PURGED`
         if status != PURGED {
@@ -95,7 +98,7 @@ impl Session {
     where
         T: DeserializeOwned,
     {
-        self.remove(key).and_then(|t| from_value(t).ok())
+        serde_json::from_value(self.remove(key)?).ok()
     }
 
     /// Clears the state
@@ -135,10 +138,10 @@ impl Session {
     }
 
     /// Gets all raw key-value data from the session
-    pub fn data(&self) -> Result<Data, Error> {
+    pub fn data(&self) -> Result<Data> {
         self.lock_data()
             .read()
-            .map_err(|e| Error::RwLock(e.to_string()))
+            .map_err(into_io_error)
             .map(|d| d.clone())
     }
 }
@@ -147,4 +150,9 @@ impl fmt::Debug for Session {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.state.fmt(f)
     }
+}
+
+#[inline]
+fn into_io_error<E: std::error::Error>(e: E) -> Error {
+    Error::new(ErrorKind::Other, e.to_string())
 }
